@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prudential Real Estate — AI Agent Demo</title>
+<style>
+  :root{
+    --navy:#0a1f44; --navy2:#102a52; --blue:#143a70; --accent:#2f6fed;
+    --gold:#c8a13a; --gold2:#e0bf66; --green:#2e9e5b; --amber:#e0a800; --red:#c0392b;
+    --bg:#f3f5fa; --card:#fff; --line:#e2e8f0; --text:#1a2433; --muted:#64748b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+  /* Header */
+  header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.18);border-bottom:3px solid var(--gold)}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo-box{width:46px;height:46px;border:2px solid var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;letter-spacing:1px;background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--navy)}
+  .brand h1{font-size:18px;font-weight:700}
+  .brand p{font-size:12px;color:#abc4e2}
+  .status-pill{background:rgba(255,255,255,.12);padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#39d98a;box-shadow:0 0 0 3px rgba(57,217,138,.25);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(57,217,138,.25)}50%{box-shadow:0 0 0 6px rgba(57,217,138,.1)}}
+  .demo-flag{background:var(--amber);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;letter-spacing:.5px}
+
+  /* Nav */
+  nav{background:var(--navy2);display:flex;gap:2px;padding:0 24px;overflow-x:auto;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{background:transparent;border:none;color:#a8c0e0;padding:14px 16px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:.15s}
+  nav button:hover{color:#fff}
+  nav button.active{color:#fff;border-bottom-color:var(--gold)}
+
+  /* Layout */
+  main{max-width:1200px;margin:0 auto;padding:28px 24px 60px}
+  .tab{display:none;animation:fade .2s ease}
+  .tab.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  h2.page-title{font-size:20px;color:var(--navy);margin-bottom:4px}
+  p.page-sub{color:var(--muted);font-size:14px;margin-bottom:24px}
+
+  /* Stat cards */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:0 1px 4px rgba(16,24,40,.05)}
+  .stat .n{font-size:32px;font-weight:800;color:var(--navy)}
+  .stat .l{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+  .stat .t{font-size:12px;font-weight:700;margin-top:8px}
+  .up{color:var(--green)} .flat{color:var(--muted)}
+
+  /* Two-col highlight row */
+  .highlight-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+  .hl-card{border-radius:12px;padding:20px 24px;border:1px solid var(--line)}
+  .hl-card .hl-n{font-size:36px;font-weight:800;margin:6px 0 4px}
+  .hl-card .hl-l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .hl-card .hl-sub{font-size:12px;margin-top:2px}
+
+  /* Cards */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:20px;overflow:hidden;box-shadow:0 1px 4px rgba(16,24,40,.05)}
+  .card-h{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .card-h h3{font-size:15px;color:var(--navy);font-weight:700}
+  .card-h .meta{font-size:12px;color:var(--muted)}
+  .card-body{padding:18px 20px}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;padding:10px 20px;background:#f8fafc;color:var(--muted);font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.4px;border-bottom:1px solid var(--line)}
+  td{padding:12px 20px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbff}
+  .addr{font-weight:600;color:var(--navy)}
+  .small{font-size:12px;color:var(--muted)}
+  .price{font-weight:700;color:var(--navy)}
+
+  /* Badges */
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700}
+  .b-new{background:#e7f0ff;color:#1d4ed8}
+  .b-hot{background:#ffe9e9;color:#c0392b}
+  .b-warm{background:#fff4dd;color:#a86a00}
+  .b-cold{background:#f1f5f9;color:#475569}
+  .b-qualified{background:#fef9c3;color:#854d0e}
+  .b-nurture{background:#eef2f7;color:#475569}
+  .b-won{background:#e3f7ec;color:#1d7a45}
+  .b-sms{background:#eafaf1;color:#218a52}
+  .b-email{background:#eef2ff;color:#4f46e5}
+  .b-sent{background:#e3f7ec;color:#1d7a45}
+  .b-pending{background:#fff4dd;color:#a86a00}
+  .b-opted{background:#fef2f2;color:#9ca3af}
+
+  /* Score bar */
+  .score-wrap{display:flex;align-items:center;gap:6px}
+  .score-bar{width:56px;height:6px;border-radius:4px;background:#eee;overflow:hidden;display:inline-block}
+  .score-fill{height:100%;border-radius:4px}
+
+  /* Call list rows */
+  .call-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:10px;background:#f8faff;margin-bottom:10px;border:1px solid #eef2ff}
+  .call-rank{font-size:17px;font-weight:800;color:#bbb;min-width:28px}
+  .call-info{flex:1;min-width:0}
+  .call-name{font-weight:700;font-size:14px;color:var(--navy)}
+  .call-meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .call-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .call-btn{background:var(--green);color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+
+  /* Showing rows */
+  .showing-row{display:flex;align-items:center;gap:16px;padding:14px 16px;border-radius:10px;background:#f8faff;margin-bottom:10px;border:1px solid #eef2ff}
+  .showing-time{font-size:13px;color:var(--accent);font-weight:700;min-width:140px}
+  .showing-info{flex:1}
+  .showing-name{font-weight:600;font-size:14px}
+  .showing-loc{font-size:12px;color:var(--muted);margin-top:2px}
+
+  /* Property match rows */
+  .match-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:10px;background:#f8faff;margin-bottom:8px;border:1px solid #eef2ff}
+  .match-listing{font-weight:600;font-size:14px;color:var(--navy)}
+  .match-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .match-count{background:var(--navy);color:#fff;padding:5px 12px;border-radius:8px;font-size:13px;font-weight:700}
+
+  /* Flow diagram */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
+  .node{background:linear-gradient(135deg,#fff,#f7f9fd);border:2px solid var(--line);border-radius:12px;padding:16px 18px;min-width:145px;max-width:175px;text-align:center}
+  .node .ico{font-size:24px;margin-bottom:6px}
+  .node h4{font-size:13px;color:var(--navy);margin-bottom:3px}
+  .node p{font-size:11.5px;color:var(--muted);line-height:1.35}
+  .node.c-blue{border-color:var(--accent)} .node.c-gold{border-color:var(--gold)}
+  .node.c-green{border-color:var(--green)} .node.c-navy{border-color:var(--navy)}
+  .arrow{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:24px;font-weight:800;padding:0 6px}
+
+  /* Stack grid */
+  .stack{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .layer{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(16,24,40,.05)}
+  .layer .tag{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:8px}
+  .layer h4{font-size:14px;color:var(--navy);margin-bottom:10px}
+  .layer ul{list-style:none}
+  .layer li{font-size:13px;padding:6px 0;border-bottom:1px solid #f1f5f9;color:#334155;display:flex;gap:8px;justify-content:space-between}
+  .layer li:last-child{border-bottom:none}
+  .ok{color:var(--green);font-weight:800} .pend{color:var(--amber);font-weight:800}
+
+  /* Step list */
+  .steps{counter-reset:s}
+  .step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:none}
+  .step-num{counter-increment:s;flex:none;width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+  .step-num::before{content:counter(s)}
+  .step h4{font-size:14px;color:var(--navy);margin-bottom:3px}
+  .step p{font-size:13px;color:var(--muted)}
+
+  /* Chip */
+  .chip{background:#f1f5f9;border-radius:6px;padding:2px 8px;font-size:11px;color:#475569;font-weight:600;margin-right:4px;display:inline-block}
+
+  /* Note banner */
+  .note{background:#fffaf0;border:1px solid #f3e3bd;border-left:4px solid var(--gold);border-radius:8px;padding:14px 18px;font-size:13px;color:#7a5b00;margin-bottom:20px}
+  .note-blue{background:#f0f7ff;border:1px solid #bfdbfe;border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;font-size:13px;color:#1e3a5f;margin-bottom:20px}
+
+  /* ROI banner */
+  .roi-banner{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:14px;padding:24px 28px;margin-bottom:24px;color:#fff}
+  .roi-banner .roi-n{font-size:42px;font-weight:800;color:#fff;margin:6px 0 4px}
+  .roi-banner .roi-l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8ab4d8}
+  .roi-banner .roi-sub{font-size:13px;color:#4f8ef7;margin-top:2px}
+  .roi-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+
+  /* Contact footer */
+  .contact{background:var(--navy);color:#cfe0f5;margin-top:40px;padding:32px 24px 16px}
+  .contact-inner{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;justify-content:space-between}
+  .contact h4{color:#fff;font-size:15px;margin-bottom:8px}
+  .contact .col{font-size:13px;line-height:1.9}
+  .contact .col-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--gold2);display:block;margin-bottom:4px}
+  .contact a{color:#cfe0f5;text-decoration:none}
+  .contact-bottom{max-width:1200px;margin:18px auto 0;border-top:1px solid rgba(255,255,255,.12);padding-top:14px;font-size:11.5px;color:#7f9ec4;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+  @media(max-width:800px){
+    .stats,.highlight-row,.roi-grid,.stack{grid-template-columns:1fr 1fr}
+    .stats{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:520px){
+    .stats,.highlight-row,.roi-grid,.stack{grid-template-columns:1fr}
+    header{flex-direction:column;align-items:flex-start;gap:12px}
+  }
+</style>
+</head>
+<body>
+
+<!-- Login gate -->
+<div id="__authgate" style="position:fixed;inset:0;z-index:99999;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="background:#fff;padding:32px;border-radius:14px;max-width:340px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.3);">
+    <h2 style="margin:0 0 6px;font-size:20px;color:#1a1a2e;">🔒 Prudential AI Dashboard</h2>
+    <p style="margin:0 0 16px;color:#666;font-size:13px;">Enter the access password to continue.</p>
+    <input id="__authpw" type="password" placeholder="Password" autofocus style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px;margin-bottom:10px;">
+    <button id="__authbtn" style="width:100%;padding:11px;background:#1a1a2e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Unlock</button>
+    <div id="__autherr" style="color:#dc2626;font-size:13px;margin-top:10px;display:none;">Incorrect password — try again.</div>
+  </div>
+</div>
+<script>
+(function(){
+  var API='https://realestate-agent-three.vercel.app';
+  // Attach the dashboard password to every /api/ call (except the login check).
+  var _f=window.fetch;
+  window.fetch=function(url,opts){
+    opts=opts||{};
+    try{
+      var pw=sessionStorage.getItem('dash_pw');
+      var u=String(url);
+      if(pw&&u.indexOf('/api/')!==-1&&u.indexOf('/api/auth/login')===-1){
+        opts.headers=Object.assign({},opts.headers,{'X-Dashboard-Auth':pw});
+      }
+    }catch(e){}
+    return _f(url,opts);
+  };
+
+  var gate=document.getElementById('__authgate');
+  if(sessionStorage.getItem('dash_auth')==='1'){gate.style.display='none';return;}
+  document.documentElement.style.overflow='hidden';
+  var err=document.getElementById('__autherr');
+  function tryLogin(){
+    err.style.display='none';
+    var pw=document.getElementById('__authpw').value;
+    _f(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})})
+      .then(function(r){return r.json();})
+      .then(function(d){if(d&&d.ok){sessionStorage.setItem('dash_auth','1');sessionStorage.setItem('dash_pw',pw);gate.style.display='none';document.documentElement.style.overflow='';}else{err.style.display='block';}})
+      .catch(function(){err.style.display='block';});
+  }
+  document.getElementById('__authbtn').addEventListener('click',tryLogin);
+  document.getElementById('__authpw').addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
+})();
+</script>
+
+<header>
+  <div class="brand">
+    <div class="logo-box">PR</div>
+    <div>
+      <h1>Prudential Real Estate — AI Agent</h1>
+      <p>Macquarie Fields · Principal: Ash Singh · Agent Dashboard</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="status-pill"><span class="dot"></span> AI Active 24/7</div>
+    <span class="demo-flag">DEMO</span>
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-tab="overview">📊 Overview</button>
+  <button data-tab="calllist">🔥 Call List</button>
+  <button data-tab="showings">📅 Showings</button>
+  <button data-tab="leads">👥 All Leads</button>
+  <button data-tab="matching">🎯 Property Matching</button>
+  <button data-tab="valuation">💰 Seller Valuations</button>
+  <button data-tab="reengagement">🔄 Re-Engagement</button>
+  <button data-tab="followups">📨 Follow-ups</button>
+  <button data-tab="maintenance">🛠️ Maintenance</button>
+  <button data-tab="renewals">🔄 Lease Renewals</button>
+  <button data-tab="arrears">💸 Rent Arrears</button>
+  <button data-tab="inspections">🏠 Inspections</button>
+  <button data-tab="report">📄 Monthly Report</button>
+  <button data-tab="howitworks">⚙️ How It Works</button>
+</nav>
+
+<main>
+
+<!-- ══════════════════ OVERVIEW ══════════════════ -->
+<section class="tab active" id="overview">
+  <h2 class="page-title">Agency Overview</h2>
+  <p class="page-sub">Live AI activity snapshot for Ash's rental and sales portfolio at Prudential Real Estate Macquarie Fields.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="n">24</div><div class="l">Total Leads</div><div class="t up">▲ 6 this week</div></div>
+    <div class="stat"><div class="n">68%</div><div class="l">Reply Rate</div><div class="t up">▲ vs 12% industry avg</div></div>
+    <div class="stat"><div class="n">147</div><div class="l">AI Messages Sent</div><div class="t up">By AI, not Ash</div></div>
+    <div class="stat"><div class="n">6</div><div class="l">Showings Booked</div><div class="t up">▲ 2 this week</div></div>
+  </div>
+
+  <div class="highlight-row">
+    <div class="hl-card" style="background:linear-gradient(135deg,#ffe9e9,#fff5f5);border-color:#fecaca;">
+      <div class="hl-l" style="color:#b91c1c;">🔥 Hot Leads</div>
+      <div class="hl-n" style="color:#b91c1c;">4</div>
+      <div class="hl-sub" style="color:#dc2626;">Score ≥ 70 — call these today</div>
+    </div>
+    <div class="hl-card" style="background:linear-gradient(135deg,#fef9c3,#fffbeb);border-color:#fde68a;">
+      <div class="hl-l" style="color:#854d0e;">✅ Qualified</div>
+      <div class="hl-n" style="color:#92400e;">9</div>
+      <div class="hl-sub" style="color:#b45309;">Budget + timeline confirmed by AI</div>
+    </div>
+  </div>
+
+  <p class="page-sub" style="margin-top:22px;font-weight:600;color:#1a1a2e;">🏘️ Rental Portfolio — AI managing automatically</p>
+  <div class="highlight-row">
+    <div class="hl-card" style="background:linear-gradient(135deg,#ffedd5,#fff7ed);border-color:#fed7aa;">
+      <div class="hl-l" style="color:#9a3412;">💸 Rent Arrears</div>
+      <div class="hl-n" style="color:#9a3412;">2</div>
+      <div class="hl-sub" style="color:#c2410c;">$3,140 outstanding — AI chasing now</div>
+    </div>
+    <div class="hl-card" style="background:linear-gradient(135deg,#e0f2fe,#f0f9ff);border-color:#bae6fd;">
+      <div class="hl-l" style="color:#075985;">🏠 Inspections Due</div>
+      <div class="hl-n" style="color:#075985;">3</div>
+      <div class="hl-sub" style="color:#0369a1;">Within 14 days — notices auto-sent</div>
+    </div>
+    <div class="hl-card" style="background:linear-gradient(135deg,#dcfce7,#f0fdf4);border-color:#bbf7d0;">
+      <div class="hl-l" style="color:#166534;">🔄 Renewals Due</div>
+      <div class="hl-n" style="color:#166534;">6</div>
+      <div class="hl-sub" style="color:#15803d;">In next 90 days — 0 missed</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Recent AI Activity</h3><span class="meta">Last 24 hours</span></div>
+    <table>
+      <tbody>
+        <tr><td class="small" style="width:110px">2 min ago</td><td>🤖 AI replied to <b>Sarah Nguyen</b> — extracted budget $620/wk and timeline "this month" <span class="badge b-warm">WARM</span></td></tr>
+        <tr><td class="small">18 min ago</td><td>📩 New lead captured — <b>Daniel Brooks</b> (rental, Ingleburn) — AI texted within 8 seconds</td></tr>
+        <tr><td class="small">1 hr ago</td><td>🔥 <b>Priya Sharma</b> scored 92/100 — pre-approved, $890k budget, wants inspection ASAP <span class="badge b-hot">HOT</span></td></tr>
+        <tr><td class="small">2 hrs ago</td><td>📅 Showing confirmed — <b>Tom &amp; Mia Walker</b> at 7/22 Eagleview Rd, Minto — reminder SMS queued</td></tr>
+        <tr><td class="small">3 hrs ago</td><td>🎯 Property match blast sent — 31 Brooks St listed at $1.05M — AI texted <b>5 matching leads</b></td></tr>
+        <tr><td class="small">5 hrs ago</td><td>🏠 Seller valuation generated for <b>Marcus Webb</b> — 4 Thornton Ave, Campbelltown — emailed instantly</td></tr>
+        <tr><td class="small">Yesterday</td><td>🔄 Re-engagement campaign sent to <b>7 cold leads</b> — 3 replied within 2 hours</td></tr>
+        <tr><td class="small">Yesterday</td><td>💸 Arrears notice sent to <b>Late Larry</b> — rent 5 days overdue ($600/wk) — Ash alerted</td></tr>
+        <tr><td class="small">Yesterday</td><td>🏠 Inspection notice sent to <b>Inspect Ivan</b> — 2 Checkup Ct, Ingleburn — 7+ days advance notice</td></tr>
+        <tr><td class="small">2 days ago</td><td>🔄 Renewal offer drafted for <b>Jordan Lee</b> — $540 → $560/wk — review &amp; send</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note-blue">
+    <strong>Your AI agent is active right now.</strong> It responds to new leads 24/7, qualifies them by budget and timeline, scores them 0–100, books showings, matches listings to buyers, and tells Ash exactly who to call — all without lifting a finger.
+  </div>
+</section>
+
+<!-- ══════════════════ CALL LIST ══════════════════ -->
+<section class="tab" id="calllist">
+  <h2 class="page-title">🔥 Call List</h2>
+  <p class="page-sub">Your hottest leads ranked by AI score. Call them in this order — the AI has already warmed them up.</p>
+
+  <div class="note">💡 Every lead here has been automatically contacted, qualified and scored by AI. Ash only needs to make the calls.</div>
+
+  <div id="call-list-demo"></div>
+</section>
+
+<!-- ══════════════════ SHOWINGS ══════════════════ -->
+<section class="tab" id="showings">
+  <h2 class="page-title">📅 Upcoming Showings</h2>
+  <p class="page-sub">All booked inspections. AI sends a reminder SMS to the lead 24 hours before — no-show rate drops significantly.</p>
+
+  <div class="showing-row">
+    <div class="showing-time">Tue 24 Jun · 10:00am</div>
+    <div class="showing-info"><div class="showing-name">Priya Sharma</div><div class="showing-loc">31 Brooks St, Campbelltown · 4bed/2bath · $1.05M</div></div>
+    <span class="badge b-hot">HOT</span>
+  </div>
+  <div class="showing-row">
+    <div class="showing-time">Tue 24 Jun · 1:30pm</div>
+    <div class="showing-info"><div class="showing-name">Tom &amp; Mia Walker</div><div class="showing-loc">7/22 Eagleview Rd, Minto · 2bed/2bath · $549k</div></div>
+    <span class="badge b-hot">HOT</span>
+  </div>
+  <div class="showing-row">
+    <div class="showing-time">Wed 25 Jun · 11:00am</div>
+    <div class="showing-info"><div class="showing-name">Aisha Rahman</div><div class="showing-loc">26 Victoria Rd, Macquarie Fields · 5bed/3bath · $1.29M</div></div>
+    <span class="badge b-warm">WARM</span>
+  </div>
+  <div class="showing-row">
+    <div class="showing-time">Thu 26 Jun · 9:30am</div>
+    <div class="showing-info"><div class="showing-name">James Carter</div><div class="showing-loc">45 Railway Pde, Glenfield · 3bed/2bath · $789k</div></div>
+    <span class="badge b-warm">WARM</span>
+  </div>
+  <div class="showing-row">
+    <div class="showing-time">Sat 28 Jun · 10:00am</div>
+    <div class="showing-info"><div class="showing-name">Daniel Brooks</div><div class="showing-loc">8 Cumberland Rd, Ingleburn · 2bed/1bath · $520/wk rental</div></div>
+    <span class="badge b-new">NEW</span>
+  </div>
+
+  <div class="note-blue" style="margin-top:20px;">
+    <strong>Automatic reminders:</strong> The AI texts every lead 24 hours before their inspection — "Hi Tom, just a reminder your viewing at 7/22 Eagleview Rd is tomorrow at 1:30pm. Reply if you need to reschedule." No-shows drop by ~40%.
+  </div>
+</section>
+
+<!-- ══════════════════ ALL LEADS ══════════════════ -->
+<section class="tab" id="leads">
+  <h2 class="page-title">👥 All Leads</h2>
+  <p class="page-sub">Every enquiry captured and qualified automatically. AI contacts each lead within seconds of form submission.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>All Leads</h3><span class="meta">24 total · 4 hot · 9 qualified</span></div>
+    <table>
+      <thead><tr><th>Name</th><th>Contact</th><th>Enquiry</th><th>Budget</th><th>Timeline</th><th>Pre-Approved</th><th>Score</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="addr">Priya Sharma</td><td class="small">0412 884 220<br>priya@email.com</td><td>Buy — 3BR house, Glenfield</td><td class="price">$890k</td><td>ASAP</td><td><span class="ok">✓ Yes</span></td><td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:92%;background:#ef4444"></div></div><b>92</b></div></td><td><span class="badge b-hot">HOT</span></td></tr>
+        <tr><td class="addr">Tom &amp; Mia Walker</td><td class="small">0421 660 913<br>walkers@email.com</td><td>Buy — unit, Minto</td><td class="price">$540k</td><td>2–3 months</td><td><span class="ok">✓ Yes</span></td><td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:85%;background:#ef4444"></div></div><b>85</b></div></td><td><span class="badge b-hot">HOT</span></td></tr>
+        <tr><td class="addr">Aisha Rahman</td><td class="small">0407 559 188<br>aisha@email.com</td><td>Buy — 4BR house, Campbelltown</td><td class="price">$1.05M</td><td>3–6 months</td><td><span class="pend">Pending</span></td><td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:72%;background:#ef4444"></div></div><b>72</b></div></td><td><span class="badge b-hot">HOT</span></td></tr>
+        <tr><td class="addr">James Carter</td><td class="small">0488 221 340<br>james@email.com</td><td>Buy — 3BR house, Glenfield</td><td class="price">$800k</td><td>This quarter</td><td><span class="ok">✓ Yes</span></td><td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:78%;background:#ef4444"></div></div><b>78</b></div></td><td><span class="badge b-hot">HOT</span></td></tr>
+        <tr><td class="addr">Sarah Nguyen</td><td class="small">0455 102 778<br>sarah@email.com</td><td>Rent — 14 Saywell Rd</td><td class="price">$620/wk</td><td>This month</td><td class="small">N/A</td><td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:55%;background:#f97316"></div></div><b>55</b></div></td><td><span class="badge b-warm">WARM</span></td></tr>
+        <tr><td class="addr">Liam O'Connor</td><td class="small">0490 332 071<br>liam@email.com</td><td>Invest — rental yield, Liverpool</td><td class="price">$700k</td><td>Researching</td><td><span class="ok">✓ Yes</span></td><td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:48%;background:#f97316"></div></div><b>48</b></div></td><td><span class="badge b-warm">WARM</span></td></tr>
+        <tr><td class="addr">Daniel Brooks</td><td class="small">0438 271 645<br>daniel@email.com</td><td>Rent — 2BR, Ingleburn</td><td class="price">$520/wk</td><td>Flexible</td><td class="small">N/A</td><td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:30%;background:#94a3b8"></div></div><b>30</b></div></td><td><span class="badge b-new">NEW</span></td></tr>
+        <tr><td class="addr">Chen Wei</td><td class="small">0413 998 540<br>chen@email.com</td><td>Buy — townhouse, Glenfield</td><td class="price">$780k</td><td>This quarter</td><td><span class="ok">✓ Yes</span></td><td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:100%;background:#ef4444"></div></div><b>100</b></div></td><td><span class="badge b-won">WON 🎉</span></td></tr>
+        <tr><td class="addr">Emma Thompson</td><td class="small">0466 718 224<br>emma@email.com</td><td>Rent — 3BR, Macquarie Fields</td><td class="price">$680/wk</td><td>This month</td><td class="small">N/A</td><td><div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:25%;background:#94a3b8"></div></div><b>25</b></div></td><td><span class="badge b-new">NEW</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note">💡 When a new lead lands here, the AI has already texted and emailed them within seconds. Ash's team only spends time on leads marked <span class="badge b-hot">HOT</span> or <span class="badge b-warm">WARM</span>.</div>
+</section>
+
+<!-- ══════════════════ PROPERTY MATCHING ══════════════════ -->
+<section class="tab" id="matching">
+  <h2 class="page-title">🎯 Property Matching</h2>
+  <p class="page-sub">When a new listing goes live, AI instantly finds every lead whose budget matches — and texts them all a personalised message. Ash doesn't lift a finger.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Recent Match Blasts</h3><span class="meta">Last 7 days</span></div>
+    <div style="padding:8px 0">
+      <div class="match-row">
+        <div><div class="match-listing">31 Brooks St, Campbelltown — $1,050,000</div><div class="match-sub">4 bed / 2 bath · Pool, ensuite · Listed today</div></div>
+        <div style="display:flex;align-items:center;gap:10px;"><span class="small">5 leads matched</span><span class="match-count">5 SMS sent ✓</span></div>
+      </div>
+      <div class="match-row">
+        <div><div class="match-listing">45 Railway Pde, Glenfield — $789,000</div><div class="match-sub">3 bed / 2 bath · Townhouse, courtyard · Listed 2 days ago</div></div>
+        <div style="display:flex;align-items:center;gap:10px;"><span class="small">3 leads matched</span><span class="match-count">3 SMS sent ✓</span></div>
+      </div>
+      <div class="match-row">
+        <div><div class="match-listing">7/22 Eagleview Rd, Minto — $549,000</div><div class="match-sub">2 bed / 2 bath · Balcony, lift · Listed 4 days ago</div></div>
+        <div style="display:flex;align-items:center;gap:10px;"><span class="small">4 leads matched</span><span class="match-count">4 SMS sent ✓</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Example AI Match SMS</h3><span class="meta">Sent to Priya Sharma for 31 Brooks St</span></div>
+    <div class="card-body">
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:16px 20px;font-size:14px;line-height:1.7;max-width:480px;">
+        "Hey Priya, just listed a 4bed in Campbelltown at $1.05M — pool, ensuite, exactly the size you mentioned. Knowing you're pre-approved and ready to move, this one seems worth a look. Want to grab an inspection time? 😊"
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px;">AI personalises every message using the lead's name, budget and conversation history. No two messages are the same.</p>
+    </div>
+  </div>
+
+  <div class="note-blue">
+    <strong>How it works:</strong> Ash enters a new listing → AI checks every lead's budget (±15%) → personalised SMS fired to all matches in seconds. A new listing that used to take 30 minutes of manual outreach now takes 30 seconds.
+  </div>
+</section>
+
+<!-- ══════════════════ SELLER VALUATIONS ══════════════════ -->
+<section class="tab" id="valuation">
+  <h2 class="page-title">💰 Seller Valuations</h2>
+  <p class="page-sub">The "What's My Home Worth?" lead magnet. Homeowners fill in their property details, AI generates an instant valuation and emails it to them — capturing them as a seller lead automatically.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Recent Seller Leads</h3><span class="meta">Captured via valuation tool</span></div>
+    <table>
+      <thead><tr><th>Seller</th><th>Address</th><th>Est. Value</th><th>Condition</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="addr">Marcus Webb</td><td>4 Thornton Ave, Campbelltown</td><td class="price">$920k–$980k</td><td>Good</td><td><span class="badge b-warm">WARM</span></td></tr>
+        <tr><td class="addr">Linda Park</td><td>19 Pindari Rd, Macquarie Fields</td><td class="price">$740k–$800k</td><td>Excellent</td><td><span class="badge b-hot">HOT</span></td></tr>
+        <tr><td class="addr">Greg &amp; Sue Morton</td><td>8 Cumberland Rd, Ingleburn</td><td class="price">$610k–$660k</td><td>Fair</td><td><span class="badge b-nurture">NURTURE</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Example Valuation Delivered to Seller</h3><span class="meta">Emailed to Marcus Webb instantly</span></div>
+    <div class="card-body">
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:18px 20px;font-size:13.5px;line-height:1.8;white-space:pre-wrap;">ESTIMATED VALUE RANGE:
+$920,000 – $980,000
+
+WHAT'S WORKING IN YOUR FAVOUR:
+• 4-bedroom layout is in high demand in Campbelltown
+• Good condition reduces buyer negotiation leverage
+• Proximity to Campbelltown CBD adds lifestyle value
+
+WHAT COULD AFFECT THE PRICE:
+• Year built (2001) means some buyers expect minor updates
+• No pool on a 620m² block — buyers at this price range often expect it
+• Current market softness in 1M+ range may tighten the upper end
+
+TO GET TOP DOLLAR:
+• Fresh paint throughout — $3-5k spend, $30k+ return
+• Professional photography — standard for this price bracket
+• List on a Thursday for maximum weekend open home traffic
+
+NEXT STEP:
+I'd love to come out for a free, no-obligation walk-through to give you an exact figure. — Ash Singh, Prudential Real Estate</div>
+    </div>
+  </div>
+
+  <div class="note-blue">
+    <strong>Why this matters:</strong> Seller leads are worth 3-5× more than buyer leads — they control a listing. This tool captures them passively from the website, 24/7, without Ash having to do cold outreach.
+  </div>
+</section>
+
+<!-- ══════════════════ RE-ENGAGEMENT ══════════════════ -->
+<section class="tab" id="reengagement">
+  <h2 class="page-title">🔄 Re-Engagement Campaigns</h2>
+  <p class="page-sub">The AI automatically re-engages leads who went quiet — sending a natural, personalised message based on their history. Opted-out leads are always skipped.</p>
+
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat"><div class="n">8</div><div class="l">🧊 Cold Leads</div><div class="t flat">Score &lt; 40, never replied</div></div>
+    <div class="stat"><div class="n">4</div><div class="l">💤 Dormant</div><div class="t flat">No activity 30+ days</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">🔍 Unqualified</div><div class="t flat">Replied but no budget yet</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Last Campaign Results</h3><span class="meta">Sent 3 days ago — cold segment</span></div>
+    <table>
+      <thead><tr><th>Lead</th><th>Message Type</th><th>Sent</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="addr">Oliver Grant</td><td>Cold re-engagement</td><td class="small">3 days ago</td><td><span class="badge b-hot">Replied — now HOT</span></td></tr>
+        <tr><td class="addr">Fatima Al-Hassan</td><td>Cold re-engagement</td><td class="small">3 days ago</td><td><span class="badge b-warm">Replied — WARM</span></td></tr>
+        <tr><td class="addr">Paul Nguyen</td><td>Cold re-engagement</td><td class="small">3 days ago</td><td><span class="badge b-sent">Delivered — no reply yet</span></td></tr>
+        <tr><td class="addr">Nina Sharma</td><td>Cold re-engagement</td><td class="small">3 days ago</td><td><span class="badge b-sent">Delivered — no reply yet</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note-blue">
+    <strong>Example re-engagement SMS:</strong> "Hey Oliver, it's Ash from Prudential — we chatted a couple of months back about finding a place in Campbelltown. Market's shifted a bit since then and there are a couple of properties I think you'd genuinely like. Still looking, or has the plan changed?"
+    <br><br>Sounds human. Because the AI writes it based on the actual conversation history.
+  </div>
+</section>
+
+<!-- ══════════════════ FOLLOW-UPS ══════════════════ -->
+<section class="tab" id="followups">
+  <h2 class="page-title">📨 Automated Follow-up Sequences</h2>
+  <p class="page-sub">Every lead is enrolled in a 60-day nurture sequence. If they reply at any point, the AI takes over the conversation — the sequence pauses and a two-way chat begins.</p>
+
+  <div class="note-blue">
+    <strong>Stop-on-reply built in:</strong> The moment a lead texts back, all scheduled follow-ups cancel and the AI handles the live conversation. No spamming someone who's already engaged.
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Sequence Timeline</h3><span class="meta">Applies to every new lead</span></div>
+    <div class="card-body">
+      <div class="steps">
+        <div class="step"><div class="step-num"></div><div><h4>Day 0 — Instant</h4><p>AI texts + emails the lead within seconds of form submission. Warm, personal, asks one qualifying question.</p></div></div>
+        <div class="step"><div class="step-num"></div><div><h4>Day 3</h4><p>"I have some new listings that might interest you…" — keeps Ash top of mind while the lead is still warm.</p></div></div>
+        <div class="step"><div class="step-num"></div><div><h4>Day 7</h4><p>Market insight message — positions Ash as the local expert without being pushy.</p></div></div>
+        <div class="step"><div class="step-num"></div><div><h4>Day 14</h4><p>"Has anything changed in what you're looking for?" — re-qualifies and restarts the conversation.</p></div></div>
+        <div class="step"><div class="step-num"></div><div><h4>Day 30</h4><p>New listing alert in their area — gives a concrete reason to re-engage.</p></div></div>
+        <div class="step"><div class="step-num"></div><div><h4>Day 60</h4><p>Light market update — keeps the relationship warm without pressure. Last touchpoint.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Scheduled &amp; Sent</h3><span class="meta">Scheduler runs every 30 min</span></div>
+    <table>
+      <thead><tr><th>Lead</th><th>Channel</th><th>Message Preview</th><th>Scheduled</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="addr">Daniel Brooks</td><td><span class="badge b-sms">SMS</span></td><td class="small">"Hi Daniel, thanks for your enquiry on 8 Cumberland Rd. Want me to book you an inspection this Saturday?"</td><td class="small">Today 4:30pm</td><td><span class="badge b-pending">PENDING</span></td></tr>
+        <tr><td class="addr">Emma Thompson</td><td><span class="badge b-email">EMAIL</span></td><td class="small">"Hi Emma, here are 3 rentals in Macquarie Fields that match what you're after…"</td><td class="small">Today 6:00pm</td><td><span class="badge b-pending">PENDING</span></td></tr>
+        <tr><td class="addr">Sarah Nguyen</td><td><span class="badge b-sms">SMS</span></td><td class="small">"Hi Sarah, the owner of 14 Saywell Rd is reviewing applications Friday. Still keen?"</td><td class="small">Today 2:00pm</td><td><span class="badge b-sent">SENT ✓</span></td></tr>
+        <tr><td class="addr">Liam O'Connor</td><td><span class="badge b-sms">SMS</span></td><td class="small">"Hi Liam, new investor unit in Liverpool — 6.2% yield. Want the numbers?"</td><td class="small">Yesterday</td><td><span class="badge b-sent">SENT ✓</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════ MAINTENANCE ══════════════════ -->
+<section class="tab" id="maintenance">
+  <h2 class="page-title">🛠️ Smart Maintenance Triage</h2>
+  <p class="page-sub">Tenants text a repair issue and the AI instantly sorts emergency from routine, replies to reassure the tenant, and alerts Ash with a prioritised summary and the recommended next step. Nothing dangerous waits in an inbox overnight.</p>
+
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat"><div class="n">2</div><div class="l">🚨 Emergencies</div><div class="t flat">Flagged for same-day action</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">⚠️ Urgent</div><div class="t flat">24–48 hour window</div></div>
+    <div class="stat"><div class="n">11</div><div class="l">🛠️ Routine</div><div class="t flat">Scheduled within the week</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>⚡ Try It Live</h3><span class="meta">Runs the real AI on the live backend</span></div>
+    <div class="card-body">
+      <div style="display:grid;gap:10px;max-width:560px">
+        <input id="mt-name" placeholder="Tenant name" value="Jordan Lee" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        <input id="mt-address" placeholder="Property address" value="12/30 Brooks St, Macquarie Fields" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        <textarea id="mt-message" rows="3" placeholder="What's the maintenance issue?" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px;font-family:inherit">There's water coming through the kitchen ceiling and it's getting worse.</textarea>
+        <button id="mt-run" style="padding:11px 18px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;justify-self:start">Run AI Triage</button>
+      </div>
+      <div id="mt-result" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Recent Maintenance Requests</h3><span class="meta">Auto-triaged by AI</span></div>
+    <table>
+      <thead><tr><th>Tenant</th><th>Property</th><th>Issue</th><th>Category</th><th>Priority</th></tr></thead>
+      <tbody>
+        <tr><td class="addr">Jordan Lee</td><td>12/30 Brooks St, Macquarie Fields</td><td>Water coming through kitchen ceiling</td><td>Plumbing</td><td><span class="badge b-hot">🚨 EMERGENCY</span></td></tr>
+        <tr><td class="addr">Priya Nair</td><td>7 Acacia Cl, Ingleburn</td><td>No hot water since this morning</td><td>Appliance</td><td><span class="badge b-warm">⚠️ URGENT</span></td></tr>
+        <tr><td class="addr">Tom Becker</td><td>3/14 Hingston Pde, Glenfield</td><td>Dripping bathroom tap</td><td>Plumbing</td><td><span class="badge b-nurture">🛠️ ROUTINE</span></td></tr>
+        <tr><td class="addr">Sara Conti</td><td>9 Banksia Rd, Campbelltown</td><td>Front door deadlock sticking</td><td>Locks/Security</td><td><span class="badge b-warm">⚠️ URGENT</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Example AI Triage</h3><span class="meta">Jordan Lee — emergency, actioned in seconds</span></div>
+    <div class="card-body">
+      <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:18px 20px;font-size:13.5px;line-height:1.8;white-space:pre-wrap;">🚨 EMERGENCY · ETA: same day
+PROPERTY: 12/30 Brooks St, Macquarie Fields
+TENANT: Jordan Lee (0412 xxx xxx)
+
+ISSUE: Active water leak through the kitchen ceiling — possible burst pipe upstairs, risk of property damage and electrical hazard.
+
+RECOMMENDED ACTION: Dispatch emergency plumber now and ask tenant to switch off the water at the mains and avoid the kitchen.</div>
+      <div class="note-blue" style="margin-top:14px">
+        <strong>Reply auto-sent to tenant:</strong> "Thanks Jordan — that's an emergency and we're on it right now. Please turn off the water at the mains if you can and stay out of the kitchen. A plumber is being dispatched and we'll text you their ETA shortly."
+      </div>
+    </div>
+  </div>
+
+  <div class="note-blue">
+    <strong>Why this matters:</strong> A burst pipe ignored overnight can cost a landlord tens of thousands. The AI never sleeps, never misclassifies an emergency as routine, and keeps the tenant calm — protecting the property and the landlord relationship at the same time.
+  </div>
+</section>
+
+<!-- ══════════════════ LEASE RENEWALS ══════════════════ -->
+<section class="tab" id="renewals">
+  <h2 class="page-title">🔄 Automated Lease Renewals</h2>
+  <p class="page-sub">The AI watches every lease end date, flags renewals 60–90 days out, recommends a retention-focused rent based on the local market, and drafts the offer message — so no renewal is ever missed and good tenants are kept.</p>
+
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat"><div class="n">6</div><div class="l">📅 Due in 90 Days</div><div class="t flat">Renewals to action now</div></div>
+    <div class="stat"><div class="n">$184</div><div class="l">💰 Avg Rent Uplift</div><div class="t up">Across this batch</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">⏳ Missed Renewals</div><div class="t up">Down from 4 last quarter</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>⚡ Try It Live</h3><span class="meta">Runs the real AI on the live backend</span></div>
+    <div class="card-body">
+      <div style="display:grid;gap:10px;max-width:560px">
+        <input id="rn-name" placeholder="Tenant name" value="Jordan Lee" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        <input id="rn-address" placeholder="Property address" value="12/30 Brooks St, Macquarie Fields" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input id="rn-rent" type="number" placeholder="Current rent/wk" value="540" style="flex:1;min-width:140px;padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+          <input id="rn-end" placeholder="Lease ends" value="30 Aug 2026" style="flex:1;min-width:140px;padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        </div>
+        <input id="rn-market" placeholder="Market context (optional)" value="Comparable 2-bed units in Macquarie Fields renting $555–$575/wk" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        <button id="rn-run" style="padding:11px 18px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;justify-self:start">Draft Renewal Offer</button>
+      </div>
+      <div id="rn-result" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Upcoming Renewals</h3><span class="meta">AI-recommended terms</span></div>
+    <table>
+      <thead><tr><th>Tenant</th><th>Property</th><th>Lease Ends</th><th>Current → Suggested</th><th>Retention Risk</th></tr></thead>
+      <tbody>
+        <tr><td class="addr">Jordan Lee</td><td>12/30 Brooks St, Macquarie Fields</td><td class="small">in 62 days</td><td class="price">$540 → $560/wk (+3.7%)</td><td><span class="badge b-nurture">LOW</span></td></tr>
+        <tr><td class="addr">The Okafor Family</td><td>22 Eskdale St, Minto</td><td class="small">in 74 days</td><td class="price">$610 → $620/wk (+1.6%)</td><td><span class="badge b-warm">MEDIUM</span></td></tr>
+        <tr><td class="addr">Hannah Wright</td><td>5/3 Railway Pde, Glenfield</td><td class="small">in 88 days</td><td class="price">$480 → $480/wk (0%)</td><td><span class="badge b-hot">HIGH</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Example Renewal Offer</h3><span class="meta">Drafted for Jordan Lee — review &amp; send</span></div>
+    <div class="card-body">
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:18px 20px;font-size:13.5px;line-height:1.8;white-space:pre-wrap;">Hi Jordan,
+
+Your lease at 12/30 Brooks St is coming up for renewal on the 30th, and we'd genuinely love to have you stay on — you've been a fantastic tenant.
+
+In line with what similar places in Macquarie Fields are renting for, we'd propose a new 12-month lease at $560 per week (currently $540). Everything else stays exactly the same.
+
+Happy to lock it in, or jump on a quick call if you'd like to chat it through. Just let me know what works.
+
+— Ash Singh, Prudential Real Estate</div>
+      <div class="note-blue" style="margin-top:14px">
+        <strong>AI rationale (for Ash):</strong> Reliable long-term tenant, market supports a modest 3.7% lift. Low retention risk — recommend offering early to avoid any vacancy gap.
+      </div>
+    </div>
+  </div>
+
+  <div class="note-blue">
+    <strong>Why this matters:</strong> One week of vacancy wipes out a year of a rent increase. By renewing good tenants early at a fair, market-based rent, Ash protects landlord income and keeps the portfolio full — without chasing dates in a spreadsheet.
+  </div>
+</section>
+
+<!-- ══════════════════ RENT ARREARS ══════════════════ -->
+<section class="tab" id="arrears">
+  <h2 class="page-title">💸 Rent Arrears Monitor</h2>
+  <p class="page-sub">The AI watches every rent due date. It sends tenants a friendly reminder before rent is due, and the moment a payment is missed it messages the tenant a polite arrears notice and alerts Ash — so nothing slips through.</p>
+
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat"><div class="n">2</div><div class="l">⚠️ In Arrears</div><div class="t flat">Tenants overdue now</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">⏰ Due This Week</div><div class="t flat">Reminders going out</div></div>
+    <div class="stat"><div class="n">$3,140</div><div class="l">💰 Rent Outstanding</div><div class="t down">Being chased automatically</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>⚡ Try It Live</h3><span class="meta">Runs the real AI on the live backend</span></div>
+    <div class="card-body">
+      <div style="display:grid;gap:10px;max-width:560px">
+        <input id="ar-name" placeholder="Tenant name" value="Late Larry" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        <input id="ar-address" placeholder="Property address" value="3 Arrears Rd, Minto" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input id="ar-rent" type="number" placeholder="Rent/wk" value="600" style="flex:1;min-width:140px;padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+          <input id="ar-days" type="number" placeholder="Days overdue" value="5" style="flex:1;min-width:140px;padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        </div>
+        <button id="ar-run" style="padding:11px 18px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;justify-self:start">Draft Arrears Notice</button>
+      </div>
+      <div id="ar-result" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Current Arrears</h3><span class="meta">AI is chasing these now</span></div>
+    <table>
+      <thead><tr><th>Tenant</th><th>Property</th><th>Amount Owing</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="addr">Late Larry</td><td>3 Arrears Rd, Minto</td><td class="price">$600/wk</td><td><span class="badge b-hot">5 DAYS OVERDUE</span></td></tr>
+        <tr><td class="addr">Marcus Webb</td><td>9/14 Saywell Rd, Macquarie Fields</td><td class="price">$540/wk</td><td><span class="badge b-warm">2 DAYS OVERDUE</span></td></tr>
+        <tr><td class="addr">Soon Sally</td><td>5 Duesoon St, Glenfield</td><td class="price">$550/wk</td><td><span class="badge b-nurture">DUE IN 2 DAYS</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note-blue">
+    <strong>Why this matters:</strong> Rent arrears are the #1 daily headache in property management. The AI handles the awkward chasing automatically, keeps a clear record, and only escalates to Ash when it needs a human — so landlords get paid on time without Ash babysitting a spreadsheet.
+  </div>
+</section>
+
+<!-- ══════════════════ INSPECTIONS ══════════════════ -->
+<section class="tab" id="inspections">
+  <h2 class="page-title">🏠 Routine Inspection Scheduler</h2>
+  <p class="page-sub">The AI tracks when each property is due for a routine inspection, drafts the tenant's advance notice (NSW requires at least 7 days' written notice), sends it, and alerts Ash. When an inspection is done, it automatically schedules the next one.</p>
+
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat"><div class="n">3</div><div class="l">📅 Due in 14 Days</div><div class="t flat">Notices going out</div></div>
+    <div class="stat"><div class="n">6 mo</div><div class="l">🔁 Default Cycle</div><div class="t flat">Auto-reschedules</div></div>
+    <div class="stat"><div class="n">0</div><div class="l">⏳ Overdue Inspections</div><div class="t up">Nothing missed</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>⚡ Try It Live</h3><span class="meta">Runs the real AI on the live backend</span></div>
+    <div class="card-body">
+      <div style="display:grid;gap:10px;max-width:560px">
+        <input id="in-name" placeholder="Tenant name" value="Inspect Ivan" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        <input id="in-address" placeholder="Property address" value="2 Checkup Ct, Ingleburn" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        <input id="in-date" placeholder="Inspection date" value="Saturday 5 July, 10:30am" style="padding:10px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px">
+        <button id="in-run" style="padding:11px 18px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;justify-self:start">Draft Inspection Notice</button>
+      </div>
+      <div id="in-result" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Upcoming Inspections</h3><span class="meta">AI sends notice automatically</span></div>
+    <table>
+      <thead><tr><th>Tenant</th><th>Property</th><th>Inspection Date</th><th>Notice</th></tr></thead>
+      <tbody>
+        <tr><td class="addr">Inspect Ivan</td><td>2 Checkup Ct, Ingleburn</td><td class="small">in 7 days</td><td><span class="badge b-pending">NOTICE SENT</span></td></tr>
+        <tr><td class="addr">The Okafor Family</td><td>22 Eskdale St, Minto</td><td class="small">in 11 days</td><td><span class="badge b-pending">NOTICE SENT</span></td></tr>
+        <tr><td class="addr">Hannah Wright</td><td>5/3 Railway Pde, Glenfield</td><td class="small">in 13 days</td><td><span class="badge b-nurture">SCHEDULED</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Example Inspection Notice</h3><span class="meta">Drafted for Inspect Ivan — review &amp; send</span></div>
+    <div class="card-body">
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:18px 20px;font-size:13.5px;line-height:1.8;white-space:pre-wrap;">Hi Ivan,
+
+Just letting you know we have a routine periodic inspection scheduled for your home at 2 Checkup Ct next Saturday at 10:30am. This is your advance written notice — it's a quick, standard check and won't take long.
+
+If that time doesn't suit, just reply and we'll happily rearrange.
+
+Thanks for looking after the place!
+
+— Ash Singh, Prudential Real Estate</div>
+      <div class="note-blue" style="margin-top:14px">
+        <strong>Compliance built in:</strong> Every notice gives at least 7 days' written notice and invites the tenant to rearrange — keeping inspections lawful and respectful, with zero spreadsheet chasing.
+      </div>
+    </div>
+  </div>
+
+  <div class="note-blue">
+    <strong>Why this matters:</strong> Regular inspections protect the landlord's asset and catch small issues before they become expensive. The AI makes sure they actually happen — on schedule, compliantly, and without Ash having to remember a single date.
+  </div>
+</section>
+
+<!-- ══════════════════ MONTHLY REPORT ══════════════════ -->
+<section class="tab" id="report">
+  <h2 class="page-title">📄 Monthly Performance Report</h2>
+  <p class="page-sub">On the 1st of every month, this report is automatically emailed to Ash — showing exactly what the AI did and what it's worth.</p>
+
+  <div style="background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:14px;padding:28px 32px;margin-bottom:24px;color:#fff;">
+    <div style="font-size:13px;color:#8ab4d8;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:20px;">June 2026 — Monthly Report</div>
+    <div class="roi-grid">
+      <div>
+        <div style="font-size:11px;color:#8ab4d8;text-transform:uppercase;letter-spacing:.4px;">Messages Sent by AI</div>
+        <div style="font-size:38px;font-weight:800;margin:6px 0 2px;">147</div>
+        <div style="font-size:12px;color:#4f8ef7;">Not by Ash</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#8ab4d8;text-transform:uppercase;letter-spacing:.4px;">Hours Saved</div>
+        <div style="font-size:38px;font-weight:800;margin:6px 0 2px;">19.6</div>
+        <div style="font-size:12px;color:#4f8ef7;">8 min per message vs manually</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#8ab4d8;text-transform:uppercase;letter-spacing:.4px;">Commission Opportunity</div>
+        <div style="font-size:38px;font-weight:800;margin:6px 0 2px;">$50,000</div>
+        <div style="font-size:12px;color:#4f8ef7;">4 hot leads × 10% close × $1.25M avg</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Lead Pipeline Breakdown</h3><span class="meta">June 2026</span></div>
+    <table>
+      <tbody>
+        <tr><td>Total Leads</td><td style="text-align:right;font-weight:700;font-size:18px;">24</td></tr>
+        <tr><td>Engaged with AI (replied)</td><td style="text-align:right;font-weight:700;font-size:18px;color:var(--green);">16</td></tr>
+        <tr><td>Qualified (budget + timeline confirmed)</td><td style="text-align:right;font-weight:700;font-size:18px;color:#92400e;">9</td></tr>
+        <tr><td>🔥 Hot Leads (score ≥ 70)</td><td style="text-align:right;font-weight:700;font-size:18px;color:#b91c1c;">4</td></tr>
+        <tr><td>Showings Booked</td><td style="text-align:right;font-weight:700;font-size:18px;color:#1d4ed8;">6</td></tr>
+        <tr><td>Showings Completed</td><td style="text-align:right;font-weight:700;font-size:18px;">4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Rental Portfolio — Managed Automatically</h3><span class="meta">June 2026</span></div>
+    <table>
+      <tbody>
+        <tr><td>💸 Rent Arrears (chased by AI)</td><td style="text-align:right;font-weight:700;font-size:18px;color:#9a3412;">2 · $3,140</td></tr>
+        <tr><td>🏠 Inspections Due (next 30 days)</td><td style="text-align:right;font-weight:700;font-size:18px;color:#075985;">3</td></tr>
+        <tr><td>🔄 Lease Renewals Due (next 90 days)</td><td style="text-align:right;font-weight:700;font-size:18px;color:#166534;">6</td></tr>
+        <tr><td>⏳ Missed Renewals / Overdue Inspections</td><td style="text-align:right;font-weight:700;font-size:18px;color:var(--green);">0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note-blue">
+    <strong>Tip for Ash:</strong> Send this report to your principal every month. It proves the AI is working — and makes it very easy to justify the cost. $297/month vs $50,000 in commission opportunity is a no-brainer.
+  </div>
+</section>
+
+<!-- ══════════════════ HOW IT WORKS ══════════════════ -->
+<section class="tab" id="howitworks">
+  <h2 class="page-title">⚙️ How It Works</h2>
+  <p class="page-sub">The full system — from a buyer's first enquiry to a booked inspection, running 24/7.</p>
+
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-h"><h3>System Architecture</h3></div>
+    <div class="card-body">
+      <div class="flow">
+        <div class="node c-blue"><div class="ico">🌐</div><h4>Lead Arrives</h4><p>Website form, sales page, or portal enquiry</p></div>
+        <div class="arrow">→</div>
+        <div class="node c-navy"><div class="ico">⚡</div><h4>FastAPI Backend</h4><p>Saves lead, triggers AI response instantly</p></div>
+        <div class="arrow">→</div>
+        <div class="node c-gold"><div class="ico">🧠</div><h4>AI Engine</h4><p>Writes reply, qualifies, scores 0–100</p></div>
+        <div class="arrow">→</div>
+        <div class="node c-green"><div class="ico">📲</div><h4>SMS + Email</h4><p>Delivered via Twilio + Resend in seconds</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>The Lead Journey</h3></div>
+    <div style="padding:8px 24px">
+      <div class="steps">
+        <div class="step"><div class="step-num"></div><div><h4>Enquiry arrives</h4><p>Buyer or renter submits a form. Saved to database instantly. AI responds within seconds — before any human sees it.</p></div></div>
+        <div class="step"><div class="step-num"></div><div><h4>Two-way AI conversation begins</h4><p>AI texts the lead, they reply. AI replies back. Qualifies budget, timeline and pre-approval — one natural question at a time over SMS.</p></div></div>
+        <div class="step"><div class="step-num"></div><div><h4>Lead scored 0–100</h4><p>Every reply updates the lead's score. Hot leads (≥70) are flagged immediately. Ash's call list updates in real time.</p></div></div>
+        <div class="step"><div class="step-num"></div><div><h4>Property matching runs automatically</h4><p>New listing goes live → AI checks all leads → personalised SMS sent to matches within seconds.</p></div></div>
+        <div class="step"><div class="step-num"></div><div><h4>Showing booked, reminder sent</h4><p>Lead or agent books an inspection. AI sends a confirmation SMS + 24-hour reminder to cut no-shows.</p></div></div>
+        <div class="step"><div class="step-num"></div><div><h4>Hot lead handed to Ash</h4><p>Pre-approved, qualified, showing booked. Ash walks in to close — the AI did everything else.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stack" style="margin-top:24px;">
+    <div class="layer">
+      <div class="tag">AI</div>
+      <h4>The Brain</h4>
+      <ul>
+        <li><span>Two-way SMS replies</span><span class="ok">●</span></li>
+        <li><span>Lead qualification</span><span class="ok">●</span></li>
+        <li><span>Lead scoring 0–100</span><span class="ok">●</span></li>
+        <li><span>Property match SMS</span><span class="ok">●</span></li>
+        <li><span>Seller valuations</span><span class="ok">●</span></li>
+        <li><span>Re-engagement copy</span><span class="ok">●</span></li>
+        <li><span>Listing descriptions</span><span class="ok">●</span></li>
+        <li><span>Fair housing audit</span><span class="ok">●</span></li>
+      </ul>
+    </div>
+    <div class="layer">
+      <div class="tag">Automation</div>
+      <h4>Running 24/7</h4>
+      <ul>
+        <li><span>Instant lead response</span><span class="ok">●</span></li>
+        <li><span>60-day follow-up sequence</span><span class="ok">●</span></li>
+        <li><span>Stop-on-reply</span><span class="ok">●</span></li>
+        <li><span>Appointment reminders</span><span class="ok">●</span></li>
+        <li><span>TCPA opt-out compliance</span><span class="ok">●</span></li>
+        <li><span>Monthly report email</span><span class="ok">●</span></li>
+        <li><span>Re-engagement campaigns</span><span class="ok">●</span></li>
+      </ul>
+    </div>
+    <div class="layer">
+      <div class="tag">Infrastructure</div>
+      <h4>Tech Stack</h4>
+      <ul>
+        <li><span>FastAPI backend</span><span class="ok">●</span></li>
+        <li><span>Supabase database</span><span class="ok">●</span></li>
+        <li><span>Twilio SMS</span><span class="ok">●</span></li>
+        <li><span>Resend email</span><span class="ok">●</span></li>
+        <li><span>Railway hosting</span><span class="ok">●</span></li>
+        <li><span>Vercel frontend</span><span class="ok">●</span></li>
+        <li><span>RLS data security</span><span class="ok">●</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="contact">
+  <div class="contact-inner">
+    <div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+        <div class="logo-box">PR</div>
+        <div>
+          <h4>Prudential Real Estate</h4>
+          <div style="font-size:12px;color:#8fb0d8;">Macquarie Fields — Rentals &amp; Sales</div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:#8fb0d8;max-width:260px;">AI-powered lead response, qualification and follow-up — working 24/7 so no enquiry is ever missed.</div>
+    </div>
+    <div class="col">
+      <span class="col-label">Office</span>
+      Macquarie Fields NSW 2564<br>
+      <span style="color:#8fb0d8;font-size:12px;">[address TBC]</span>
+    </div>
+    <div class="col">
+      <span class="col-label">Principal</span>
+      Ash Singh<br>
+      📞 <a href="#">[phone TBC]</a><br>
+      ✉️ <a href="#">[email TBC]</a>
+    </div>
+    <div class="col">
+      <span class="col-label">System Status</span>
+      AI: <span style="color:#39d98a;">● Active</span><br>
+      Scheduler: every 30 min<br>
+      Data: Supabase (secure)<br>
+      Hosting: Railway + Vercel
+    </div>
+  </div>
+  <div class="contact-bottom">
+    <span>© 2026 Prudential Real Estate Macquarie Fields · AI Agent Dashboard</span>
+    <span class="demo-flag">DEMO — sample data only</span>
+  </div>
+</div>
+
+<script>
+// Tab navigation
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  });
+});
+
+// Build call list dynamically with safe DOM methods
+const callData = [
+  { rank:1, name:'Priya Sharma', score:92, temp:'hot', phone:'0412 884 220', budget:'$890k', timeline:'ASAP', preApproved:true },
+  { rank:2, name:'Chen Wei', score:100, temp:'hot', phone:'0413 998 540', budget:'$780k', timeline:'This quarter', preApproved:true },
+  { rank:3, name:'James Carter', score:78, temp:'hot', phone:'0488 221 340', budget:'$800k', timeline:'This quarter', preApproved:true },
+  { rank:4, name:'Tom & Mia Walker', score:85, temp:'hot', phone:'0421 660 913', budget:'$540k', timeline:'2–3 months', preApproved:true },
+  { rank:5, name:'Aisha Rahman', score:72, temp:'hot', phone:'0407 559 188', budget:'$1.05M', timeline:'3–6 months', preApproved:false },
+  { rank:6, name:'Sarah Nguyen', score:55, temp:'warm', phone:'0455 102 778', budget:'$620/wk', timeline:'This month', preApproved:false },
+  { rank:7, name:'Liam O\'Connor', score:48, temp:'warm', phone:'0490 332 071', budget:'$700k', timeline:'Researching', preApproved:true },
+  { rank:8, name:'Daniel Brooks', score:30, temp:'cold', phone:'0438 271 645', budget:'$520/wk', timeline:'Flexible', preApproved:false },
+];
+
+const scoreColor = s => s >= 70 ? '#ef4444' : s >= 40 ? '#f97316' : '#94a3b8';
+const tempClass = t => 'badge b-' + t;
+
+const container = document.getElementById('call-list-demo');
+callData.forEach(l => {
+  const row = document.createElement('div');
+  row.className = 'call-row';
+
+  const rankEl = document.createElement('div');
+  rankEl.className = 'call-rank';
+  rankEl.textContent = '#' + l.rank;
+
+  const info = document.createElement('div');
+  info.className = 'call-info';
+
+  const nameRow = document.createElement('div');
+  nameRow.style.cssText = 'display:flex;align-items:center;gap:8px;';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'call-name';
+  nameEl.textContent = l.name;
+  const tempBadge = document.createElement('span');
+  tempBadge.className = tempClass(l.temp);
+  tempBadge.textContent = l.temp;
+  nameRow.appendChild(nameEl);
+  nameRow.appendChild(tempBadge);
+
+  const metaEl = document.createElement('div');
+  metaEl.className = 'call-meta';
+  const parts = [
+    '💰 ' + l.budget,
+    '⏱ ' + l.timeline,
+    l.preApproved ? '✅ Pre-approved' : null,
+    l.phone,
+  ].filter(Boolean);
+  metaEl.textContent = parts.join(' · ');
+
+  info.appendChild(nameRow);
+  info.appendChild(metaEl);
+
+  const right = document.createElement('div');
+  right.className = 'call-right';
+
+  const scoreWrap = document.createElement('div');
+  scoreWrap.className = 'score-wrap';
+  const bar = document.createElement('div');
+  bar.className = 'score-bar';
+  const fill = document.createElement('div');
+  fill.className = 'score-fill';
+  fill.style.cssText = 'width:' + l.score + '%;background:' + scoreColor(l.score) + ';';
+  bar.appendChild(fill);
+  const scoreNum = document.createElement('b');
+  scoreNum.textContent = l.score;
+  scoreWrap.appendChild(bar);
+  scoreWrap.appendChild(scoreNum);
+
+  const callBtn = document.createElement('a');
+  callBtn.className = 'call-btn';
+  callBtn.href = 'tel:' + l.phone.replace(/\s/g, '');
+  callBtn.textContent = '📞 Call';
+
+  right.appendChild(scoreWrap);
+  right.appendChild(callBtn);
+
+  row.appendChild(rankEl);
+  row.appendChild(info);
+  row.appendChild(right);
+  container.appendChild(row);
+});
+
+// ───── Live backend wiring for Maintenance & Lease Renewal tabs ─────
+const API_BASE = 'https://realestate-agent-three.vercel.app';
+
+// Small DOM helpers — all dynamic text goes through textContent (no innerHTML).
+function el(tag, css, text) {
+  const n = document.createElement(tag);
+  if (css) n.style.cssText = css;
+  if (text != null) n.textContent = text;
+  return n;
+}
+function labelled(strongText, valueText) {
+  const p = el('div');
+  const b = el('strong', null, strongText + ' ');
+  p.appendChild(b);
+  p.appendChild(document.createTextNode(valueText == null ? '' : String(valueText)));
+  return p;
+}
+function setBusy(btn, busy, label) {
+  btn.disabled = busy;
+  btn.textContent = busy ? 'Working…' : label;
+}
+function showError(out, msg) {
+  out.replaceChildren();
+  const box = el('div', 'background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:16px 18px;font-size:13.5px;line-height:1.7');
+  box.appendChild(el('strong', null, "Couldn't reach the AI: "));
+  box.appendChild(document.createTextNode(String(msg)));
+  box.appendChild(el('div', 'margin-top:8px;color:#7f1d1d', 'The backend may be waking up or missing an API key — try again in a moment.'));
+  out.appendChild(box);
+}
+
+// Maintenance triage
+const mtBtn = document.getElementById('mt-run');
+if (mtBtn) {
+  mtBtn.addEventListener('click', async () => {
+    const out = document.getElementById('mt-result');
+    setBusy(mtBtn, true, 'Run AI Triage');
+    out.replaceChildren();
+    try {
+      const res = await fetch(API_BASE + '/api/maintenance/triage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_name: document.getElementById('mt-name').value,
+          address: document.getElementById('mt-address').value,
+          message: document.getElementById('mt-message').value,
+        }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      const flag = { emergency: ['🚨 EMERGENCY', '#fef2f2', '#fca5a5'],
+                     urgent: ['⚠️ URGENT', '#fffbeb', '#fcd34d'],
+                     routine: ['🛠️ ROUTINE', '#f0fdf4', '#86efac'] }[d.urgency] || ['🛠️ ROUTINE', '#f0fdf4', '#86efac'];
+      const box = el('div', 'background:' + flag[1] + ';border:1px solid ' + flag[2] + ';border-radius:10px;padding:18px 20px;font-size:13.5px;line-height:1.8');
+      box.appendChild(labelled(flag[0] + ' · ETA:', d.eta + ' · ' + d.category));
+      box.appendChild(labelled('Issue:', d.summary));
+      box.appendChild(labelled('Recommended action:', d.recommended_action));
+      out.appendChild(box);
+      const reply = el('div', 'margin-top:14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px 18px;font-size:13.5px;line-height:1.7');
+      reply.appendChild(el('strong', null, 'Auto-reply sent to tenant: '));
+      reply.appendChild(document.createTextNode(d.tenant_reply == null ? '' : String(d.tenant_reply)));
+      out.appendChild(reply);
+    } catch (e) {
+      showError(out, e.message);
+    } finally {
+      setBusy(mtBtn, false, 'Run AI Triage');
+    }
+  });
+}
+
+// Lease renewal draft
+const rnBtn = document.getElementById('rn-run');
+if (rnBtn) {
+  rnBtn.addEventListener('click', async () => {
+    const out = document.getElementById('rn-result');
+    setBusy(rnBtn, true, 'Draft Renewal Offer');
+    out.replaceChildren();
+    try {
+      const res = await fetch(API_BASE + '/api/renewals/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_name: document.getElementById('rn-name').value,
+          address: document.getElementById('rn-address').value,
+          current_rent: parseFloat(document.getElementById('rn-rent').value) || 0,
+          lease_end: document.getElementById('rn-end').value,
+          rent_period: 'week',
+          market_context: document.getElementById('rn-market').value,
+        }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      const box = el('div', 'background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:18px 20px;font-size:13.5px;line-height:1.8');
+      box.appendChild(labelled('Suggested rent:', '$' + d.suggested_rent + '/wk (' + d.change_pct + ')'));
+      box.appendChild(labelled('Retention risk:', String(d.retention_risk).toUpperCase()));
+      box.appendChild(labelled('Why:', d.rationale));
+      out.appendChild(box);
+      const msg = el('div', 'margin-top:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 18px;white-space:pre-wrap;font-size:13.5px;line-height:1.8');
+      msg.appendChild(el('strong', 'display:block;margin-bottom:6px', 'Draft offer to tenant (review before sending):'));
+      msg.appendChild(document.createTextNode(d.tenant_message == null ? '' : String(d.tenant_message)));
+      out.appendChild(msg);
+    } catch (e) {
+      showError(out, e.message);
+    } finally {
+      setBusy(rnBtn, false, 'Draft Renewal Offer');
+    }
+  });
+}
+
+// Rent arrears — live arrears-notice draft.
+const arBtn = document.getElementById('ar-run');
+if (arBtn) {
+  arBtn.addEventListener('click', async () => {
+    const out = document.getElementById('ar-result');
+    setBusy(arBtn, true, 'Draft Arrears Notice');
+    out.replaceChildren();
+    try {
+      const res = await fetch(API_BASE + '/api/rent/draft-notice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_name: document.getElementById('ar-name').value,
+          address: document.getElementById('ar-address').value,
+          amount: parseFloat(document.getElementById('ar-rent').value) || 0,
+          days_overdue: parseInt(document.getElementById('ar-days').value) || 0,
+          rent_period: 'week',
+        }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      const msg = el('div', 'background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:16px 18px;white-space:pre-wrap;font-size:13.5px;line-height:1.8');
+      msg.appendChild(el('strong', 'display:block;margin-bottom:6px', 'Arrears notice to tenant (review before sending):'));
+      msg.appendChild(document.createTextNode(d.message == null ? '' : String(d.message)));
+      out.appendChild(msg);
+    } catch (e) {
+      showError(out, e.message);
+    } finally {
+      setBusy(arBtn, false, 'Draft Arrears Notice');
+    }
+  });
+}
+
+// Routine inspections — live inspection-notice draft.
+const inBtn = document.getElementById('in-run');
+if (inBtn) {
+  inBtn.addEventListener('click', async () => {
+    const out = document.getElementById('in-result');
+    setBusy(inBtn, true, 'Draft Inspection Notice');
+    out.replaceChildren();
+    try {
+      const res = await fetch(API_BASE + '/api/inspections/draft-notice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_name: document.getElementById('in-name').value,
+          address: document.getElementById('in-address').value,
+          inspection_date: document.getElementById('in-date').value,
+        }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const d = await res.json();
+      const msg = el('div', 'background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:16px 18px;white-space:pre-wrap;font-size:13.5px;line-height:1.8');
+      msg.appendChild(el('strong', 'display:block;margin-bottom:6px', 'Inspection notice to tenant (review before sending):'));
+      msg.appendChild(document.createTextNode(d.message == null ? '' : String(d.message)));
+      out.appendChild(msg);
+    } catch (e) {
+      showError(out, e.message);
+    } finally {
+      setBusy(inBtn, false, 'Draft Inspection Notice');
+    }
+  });
+}
+</script>
+</body>
+</html>

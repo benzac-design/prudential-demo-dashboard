@@ -1,0 +1,7 @@
+.vercel
+.env
+.env.*
+.DS_Store
+.claude
+supabase/.temp
+handoff-*.md
