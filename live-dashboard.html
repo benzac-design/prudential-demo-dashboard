@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prudential Real Estate — AI Agent (Live)</title>
+<style>
+  :root{
+    --navy:#0a1f44; --navy2:#102a52; --blue:#143a70; --accent:#2f6fed;
+    --gold:#c8a13a; --gold2:#e0bf66; --green:#2e9e5b; --amber:#e0a800; --red:#c0392b;
+    --bg:#f3f5fa; --card:#fff; --line:#e2e8f0; --text:#1a2433; --muted:#64748b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+  /* Header */
+  header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.18);border-bottom:3px solid var(--gold)}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo-box{width:46px;height:46px;border:2px solid var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;letter-spacing:1px;background:linear-gradient(135deg,var(--gold2),var(--gold));color:var(--navy)}
+  .brand h1{font-size:18px;font-weight:700}
+  .brand p{font-size:12px;color:#abc4e2}
+  .status-pill{background:rgba(255,255,255,.12);padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#39d98a;box-shadow:0 0 0 3px rgba(57,217,138,.25);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(57,217,138,.25)}50%{box-shadow:0 0 0 6px rgba(57,217,138,.1)}}
+  .demo-flag{background:var(--amber);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;letter-spacing:.5px}
+
+  /* Nav */
+  nav{background:var(--navy2);display:flex;gap:2px;padding:0 24px;overflow-x:auto;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{background:transparent;border:none;color:#a8c0e0;padding:14px 16px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:.15s}
+  nav button:hover{color:#fff}
+  nav button.active{color:#fff;border-bottom-color:var(--gold)}
+
+  /* Layout */
+  main{max-width:1200px;margin:0 auto;padding:28px 24px 60px}
+  .tab{display:none;animation:fade .2s ease}
+  .tab.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  h2.page-title{font-size:20px;color:var(--navy);margin-bottom:4px}
+  p.page-sub{color:var(--muted);font-size:14px;margin-bottom:24px}
+
+  /* Stat cards */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:0 1px 4px rgba(16,24,40,.05)}
+  .stat .n{font-size:32px;font-weight:800;color:var(--navy)}
+  .stat .l{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+  .stat .t{font-size:12px;font-weight:700;margin-top:8px}
+  .up{color:var(--green)} .flat{color:var(--muted)}
+
+  /* Two-col highlight row */
+  .highlight-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+  .hl-card{border-radius:12px;padding:20px 24px;border:1px solid var(--line)}
+  .hl-card .hl-n{font-size:36px;font-weight:800;margin:6px 0 4px}
+  .hl-card .hl-l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .hl-card .hl-sub{font-size:12px;margin-top:2px}
+
+  /* Cards */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:20px;overflow:hidden;box-shadow:0 1px 4px rgba(16,24,40,.05)}
+  .card-h{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .card-h h3{font-size:15px;color:var(--navy);font-weight:700}
+  .card-h .meta{font-size:12px;color:var(--muted)}
+  .card-body{padding:18px 20px}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;padding:10px 20px;background:#f8fafc;color:var(--muted);font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.4px;border-bottom:1px solid var(--line)}
+  td{padding:12px 20px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafbff}
+  .addr{font-weight:600;color:var(--navy)}
+  .small{font-size:12px;color:var(--muted)}
+  .price{font-weight:700;color:var(--navy)}
+
+  /* Badges */
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700}
+  .b-new{background:#e7f0ff;color:#1d4ed8}
+  .b-hot{background:#ffe9e9;color:#c0392b}
+  .b-warm{background:#fff4dd;color:#a86a00}
+  .b-cold{background:#f1f5f9;color:#475569}
+  .b-qualified{background:#fef9c3;color:#854d0e}
+  .b-nurture{background:#eef2f7;color:#475569}
+  .b-won{background:#e3f7ec;color:#1d7a45}
+  .b-sms{background:#eafaf1;color:#218a52}
+  .b-email{background:#eef2ff;color:#4f46e5}
+  .b-sent{background:#e3f7ec;color:#1d7a45}
+  .b-pending{background:#fff4dd;color:#a86a00}
+  .b-opted{background:#fef2f2;color:#9ca3af}
+
+  /* Score bar */
+  .score-wrap{display:flex;align-items:center;gap:6px}
+  .score-bar{width:56px;height:6px;border-radius:4px;background:#eee;overflow:hidden;display:inline-block}
+  .score-fill{height:100%;border-radius:4px}
+
+  /* Call list rows */
+  .call-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:10px;background:#f8faff;margin-bottom:10px;border:1px solid #eef2ff}
+  .call-rank{font-size:17px;font-weight:800;color:#bbb;min-width:28px}
+  .call-info{flex:1;min-width:0}
+  .call-name{font-weight:700;font-size:14px;color:var(--navy)}
+  .call-meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .call-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .call-btn{background:var(--green);color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+
+  /* Showing rows */
+  .showing-row{display:flex;align-items:center;gap:16px;padding:14px 16px;border-radius:10px;background:#f8faff;margin-bottom:10px;border:1px solid #eef2ff}
+  .showing-time{font-size:13px;color:var(--accent);font-weight:700;min-width:140px}
+  .showing-info{flex:1}
+  .showing-name{font-weight:600;font-size:14px}
+  .showing-loc{font-size:12px;color:var(--muted);margin-top:2px}
+
+  /* Property match rows */
+  .match-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:10px;background:#f8faff;margin-bottom:8px;border:1px solid #eef2ff}
+  .match-listing{font-weight:600;font-size:14px;color:var(--navy)}
+  .match-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .match-count{background:var(--navy);color:#fff;padding:5px 12px;border-radius:8px;font-size:13px;font-weight:700}
+
+  /* Flow diagram */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
+  .node{background:linear-gradient(135deg,#fff,#f7f9fd);border:2px solid var(--line);border-radius:12px;padding:16px 18px;min-width:145px;max-width:175px;text-align:center}
+  .node .ico{font-size:24px;margin-bottom:6px}
+  .node h4{font-size:13px;color:var(--navy);margin-bottom:3px}
+  .node p{font-size:11.5px;color:var(--muted);line-height:1.35}
+  .node.c-blue{border-color:var(--accent)} .node.c-gold{border-color:var(--gold)}
+  .node.c-green{border-color:var(--green)} .node.c-navy{border-color:var(--navy)}
+  .arrow{display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:24px;font-weight:800;padding:0 6px}
+
+  /* Stack grid */
+  .stack{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .layer{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(16,24,40,.05)}
+  .layer .tag{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:8px}
+  .layer h4{font-size:14px;color:var(--navy);margin-bottom:10px}
+  .layer ul{list-style:none}
+  .layer li{font-size:13px;padding:6px 0;border-bottom:1px solid #f1f5f9;color:#334155;display:flex;gap:8px;justify-content:space-between}
+  .layer li:last-child{border-bottom:none}
+  .ok{color:var(--green);font-weight:800} .pend{color:var(--amber);font-weight:800}
+
+  /* Step list */
+  .steps{counter-reset:s}
+  .step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .step:last-child{border-bottom:none}
+  .step-num{counter-increment:s;flex:none;width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+  .step-num::before{content:counter(s)}
+  .step h4{font-size:14px;color:var(--navy);margin-bottom:3px}
+  .step p{font-size:13px;color:var(--muted)}
+
+  /* Chip */
+  .chip{background:#f1f5f9;border-radius:6px;padding:2px 8px;font-size:11px;color:#475569;font-weight:600;margin-right:4px;display:inline-block}
+
+  /* Note banner */
+  .note{background:#fffaf0;border:1px solid #f3e3bd;border-left:4px solid var(--gold);border-radius:8px;padding:14px 18px;font-size:13px;color:#7a5b00;margin-bottom:20px}
+  .note-blue{background:#f0f7ff;border:1px solid #bfdbfe;border-left:4px solid var(--accent);border-radius:8px;padding:14px 18px;font-size:13px;color:#1e3a5f;margin-bottom:20px}
+
+  /* ROI banner */
+  .roi-banner{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:14px;padding:24px 28px;margin-bottom:24px;color:#fff}
+  .roi-banner .roi-n{font-size:42px;font-weight:800;color:#fff;margin:6px 0 4px}
+  .roi-banner .roi-l{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8ab4d8}
+  .roi-banner .roi-sub{font-size:13px;color:#4f8ef7;margin-top:2px}
+  .roi-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+
+  /* Contact footer */
+  .contact{background:var(--navy);color:#cfe0f5;margin-top:40px;padding:32px 24px 16px}
+  .contact-inner{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:32px;justify-content:space-between}
+  .contact h4{color:#fff;font-size:15px;margin-bottom:8px}
+  .contact .col{font-size:13px;line-height:1.9}
+  .contact .col-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--gold2);display:block;margin-bottom:4px}
+  .contact a{color:#cfe0f5;text-decoration:none}
+  .contact-bottom{max-width:1200px;margin:18px auto 0;border-top:1px solid rgba(255,255,255,.12);padding-top:14px;font-size:11.5px;color:#7f9ec4;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+  @media(max-width:800px){
+    .stats,.highlight-row,.roi-grid,.stack{grid-template-columns:1fr 1fr}
+    .stats{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:520px){
+    .stats,.highlight-row,.roi-grid,.stack{grid-template-columns:1fr}
+    header{flex-direction:column;align-items:flex-start;gap:12px}
+  }
+</style>
+</head>
+<body>
+
+<!-- Login gate -->
+<div id="__authgate" style="position:fixed;inset:0;z-index:99999;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="background:#fff;padding:32px;border-radius:14px;max-width:340px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.3);">
+    <h2 style="margin:0 0 6px;font-size:20px;color:#1a1a2e;">🔒 Prudential AI Dashboard</h2>
+    <p style="margin:0 0 16px;color:#666;font-size:13px;">Enter the access password to continue.</p>
+    <input id="__authpw" type="password" placeholder="Password" autofocus style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #d4d9e2;border-radius:8px;font-size:14px;margin-bottom:10px;">
+    <button id="__authbtn" style="width:100%;padding:11px;background:#1a1a2e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Unlock</button>
+    <div id="__autherr" style="color:#dc2626;font-size:13px;margin-top:10px;display:none;">Incorrect password — try again.</div>
+  </div>
+</div>
+<script>
+(function(){
+  var API='https://realestate-agent-three.vercel.app';
+  // Attach the dashboard password to every /api/ call (except the login check).
+  var _f=window.fetch;
+  window.fetch=function(url,opts){
+    opts=opts||{};
+    try{
+      var pw=sessionStorage.getItem('dash_pw');
+      var u=String(url);
+      if(pw&&u.indexOf('/api/')!==-1&&u.indexOf('/api/auth/login')===-1){
+        opts.headers=Object.assign({},opts.headers,{'X-Dashboard-Auth':pw});
+      }
+    }catch(e){}
+    return _f(url,opts);
+  };
+
+  var gate=document.getElementById('__authgate');
+  if(sessionStorage.getItem('dash_auth')==='1'){gate.style.display='none';return;}
+  document.documentElement.style.overflow='hidden';
+  var err=document.getElementById('__autherr');
+  function tryLogin(){
+    err.style.display='none';
+    var pw=document.getElementById('__authpw').value;
+    _f(API+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})})
+      .then(function(r){return r.json();})
+      .then(function(d){if(d&&d.ok){sessionStorage.setItem('dash_auth','1');sessionStorage.setItem('dash_pw',pw);gate.style.display='none';document.documentElement.style.overflow='';}else{err.style.display='block';}})
+      .catch(function(){err.style.display='block';});
+  }
+  document.getElementById('__authbtn').addEventListener('click',tryLogin);
+  document.getElementById('__authpw').addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
+})();
+</script>
+
+<header>
+  <div class="brand">
+    <div class="logo-box">PR</div>
+    <div>
+      <h1>Prudential Real Estate — AI Agent</h1>
+      <p>Macquarie Fields · Ash Singh · Live Agent Dashboard</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="status-pill"><span class="dot"></span> AI Active 24/7</div>
+    <span class="demo-flag" style="background:var(--green)">LIVE</span>
+  </div>
+</header>
+<nav>
+  <button class="active" data-tab="overview">📊 Overview</button>
+  <button data-tab="calllist">🔥 Call List</button>
+  <button data-tab="leads">👥 Leads</button>
+  <button data-tab="listings">🏡 Listings</button>
+  <button data-tab="appointments">📅 Appointments</button>
+  <button data-tab="renewals">🔄 Lease Renewals</button>
+  <button data-tab="arrears">💸 Rent</button>
+  <button data-tab="inspections">🏠 Inspections</button>
+</nav>
+
+<main>
+
+<div class="note-blue" id="agent-banner">Showing live data for agent <b id="agent-id-label">default</b>. Add <span class="chip">?agent=&lt;id&gt;</span> to the URL to view a different agent. Data is pulled live from the AI backend — empty sections mean no records have been created yet.</div>
+
+<!-- OVERVIEW -->
+<section class="tab active" id="overview">
+  <h2 class="page-title">Agency Overview</h2>
+  <p class="page-sub">Live snapshot from the AI backend for Ash's portfolio at Prudential Real Estate Macquarie Fields.</p>
+  <div class="stats" id="ov-stats"><div class="stat"><div class="n">…</div><div class="l">Loading</div></div></div>
+  <div class="card"><div class="card-h"><h3>Lead pipeline</h3><span class="meta" id="ov-meta">live</span></div>
+    <div class="card-body" id="ov-pipeline"><p class="small">Loading…</p></div></div>
+</section>
+
+<!-- CALL LIST -->
+<section class="tab" id="calllist">
+  <h2 class="page-title">Today's Call List</h2>
+  <p class="page-sub">Hottest leads first, ranked by the AI's lead score.</p>
+  <div id="call-list-live"><p class="small">Loading…</p></div>
+</section>
+
+<!-- LEADS -->
+<section class="tab" id="leads">
+  <h2 class="page-title">All Leads</h2>
+  <p class="page-sub">Every lead the AI has captured and qualified for this agent.</p>
+  <div class="card"><div id="leads-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
+</section>
+
+<!-- LISTINGS -->
+<section class="tab" id="listings">
+  <h2 class="page-title">Listings</h2>
+  <p class="page-sub">Active listings on file for this agent.</p>
+  <div class="card"><div id="listings-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
+</section>
+
+<!-- APPOINTMENTS -->
+<section class="tab" id="appointments">
+  <h2 class="page-title">Appointments</h2>
+  <p class="page-sub">Showings and meetings booked by the AI.</p>
+  <div class="card"><div id="appts-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
+</section>
+
+<!-- RENEWALS -->
+<section class="tab" id="renewals">
+  <h2 class="page-title">Lease Renewals</h2>
+  <p class="page-sub">Active leases the AI is monitoring for renewal.</p>
+  <div class="card"><div id="renewals-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
+</section>
+
+<!-- RENT -->
+<section class="tab" id="arrears">
+  <h2 class="page-title">Rent Payments</h2>
+  <p class="page-sub">Rent payment records and arrears tracked by the AI.</p>
+  <div class="card"><div id="rent-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
+</section>
+
+<!-- INSPECTIONS -->
+<section class="tab" id="inspections">
+  <h2 class="page-title">Inspections</h2>
+  <p class="page-sub">Routine inspections scheduled for managed properties.</p>
+  <div class="card"><div id="insp-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
+</section>
+
+</main>
+
+<script>
+// ───────── Config ─────────
+const API_BASE = 'https://realestate-agent-three.vercel.app';
+const AGENT_ID = new URLSearchParams(location.search).get('agent') || 'default';
+document.getElementById('agent-id-label').textContent = AGENT_ID;
+
+// ───────── Safe DOM helpers (no innerHTML for dynamic data) ─────────
+function el(tag, css, text){const n=document.createElement(tag);if(css)n.className=css;if(text!=null)n.textContent=text;return n;}
+function td(text){const n=document.createElement('td');if(text!=null)n.textContent=String(text);return n;}
+function badge(text, cls){const b=el('span','badge '+(cls||'b-cold'),text);return b;}
+function tempClass(t){return 'b-'+(t||'cold');}
+function emptyState(msg){const d=el('div',null,null);d.style.cssText='padding:32px 20px;text-align:center;color:var(--muted);font-size:13.5px';d.textContent=msg;return d;}
+function errState(msg){const d=el('div',null,null);d.style.cssText='padding:24px 20px;color:#b91c1c;font-size:13px;background:#fef2f2;border-radius:10px';d.textContent="Couldn't load: "+msg+" — the backend may be waking up; refresh in a moment.";return d;}
+
+async function getJSON(path){
+  const r=await fetch(API_BASE+path);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+// Build a simple table from rows of [cellValue|node].
+function buildTable(headers, rows){
+  const table=el('table'); const thead=el('thead'); const htr=el('tr');
+  headers.forEach(h=>{const th=document.createElement('th');th.textContent=h;htr.appendChild(th);});
+  thead.appendChild(htr); table.appendChild(thead);
+  const tbody=el('tbody');
+  rows.forEach(cells=>{const tr=el('tr');cells.forEach(c=>{tr.appendChild(c instanceof Node?(()=>{const cell=document.createElement('td');cell.appendChild(c);return cell;})():td(c));});tbody.appendChild(tr);});
+  table.appendChild(tbody); return table;
+}
+
+// ───────── Tab navigation (lazy-load each tab once) ─────────
+const loaded={};
+const loaders={overview:loadOverview,calllist:loadCallList,leads:loadLeads,listings:loadListings,appointments:loadAppointments,renewals:loadRenewals,arrears:loadRent,inspections:loadInspections};
+function activate(tab){
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  document.querySelectorAll('.tab').forEach(p=>p.classList.toggle('active',p.id===tab));
+  if(!loaded[tab]&&loaders[tab]){loaded[tab]=true;loaders[tab]();}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('nav button').forEach(btn=>btn.addEventListener('click',()=>activate(btn.dataset.tab)));
+
+// ───────── Loaders ─────────
+async function loadOverview(){
+  const wrap=document.getElementById('ov-stats');
+  const pipe=document.getElementById('ov-pipeline');
+  try{
+    const s=await getJSON('/api/stats/'+encodeURIComponent(AGENT_ID));
+    wrap.replaceChildren();
+    const cards=[
+      [s.total_leads??0,'Total Leads'],
+      [(s.reply_rate??0)+'%','Reply Rate'],
+      [s.messages_sent??0,'AI Messages Sent'],
+      [s.appointments_booked??0,'Appointments'],
+    ];
+    cards.forEach(([n,l])=>{const c=el('div','stat');c.appendChild(el('div','n',n));c.appendChild(el('div','l',l));wrap.appendChild(c);});
+    pipe.replaceChildren();
+    const grid=el('div','highlight-row');grid.style.marginBottom='0';
+    const hot=el('div','hl-card');hot.style.cssText='background:linear-gradient(135deg,#ffe9e9,#fff5f5);border-color:#fecaca';
+    hot.appendChild(el('div','hl-l','🔥 Hot Leads'));hot.appendChild(el('div','hl-n',s.hot_leads??0));hot.appendChild(el('div','hl-sub','Score ≥ 70 — call today'));
+    const q=el('div','hl-card');q.style.cssText='background:linear-gradient(135deg,#fef9c3,#fffbeb);border-color:#fde68a';
+    q.appendChild(el('div','hl-l','✅ Qualified'));q.appendChild(el('div','hl-n',s.qualified??0));q.appendChild(el('div','hl-sub','Budget / timeline confirmed by AI'));
+    grid.appendChild(hot);grid.appendChild(q);pipe.appendChild(grid);
+    if((s.total_leads??0)===0){pipe.appendChild(emptyState('No leads captured yet for this agent.'));}
+  }catch(e){wrap.replaceChildren(errState(e.message));pipe.replaceChildren();}
+}
+
+async function loadCallList(){
+  const box=document.getElementById('call-list-live');
+  try{
+    const list=await getJSON('/api/stats/'+encodeURIComponent(AGENT_ID)+'/call-list');
+    box.replaceChildren();
+    if(!list.length){box.appendChild(emptyState('No leads to call yet.'));return;}
+    const scoreColor=s=>s>=70?'#ef4444':s>=40?'#f97316':'#94a3b8';
+    list.forEach((l,i)=>{
+      const row=el('div','call-row');
+      row.appendChild(el('div','call-rank','#'+(i+1)));
+      const info=el('div','call-info');
+      const nameRow=el('div');nameRow.style.cssText='display:flex;align-items:center;gap:8px';
+      nameRow.appendChild(el('span','call-name',l.name||'—'));
+      nameRow.appendChild(badge(l.temperature||'cold',tempClass(l.temperature)));
+      info.appendChild(nameRow);
+      const parts=[l.budget?('💰 '+l.budget):null,l.timeline?('⏱ '+l.timeline):null,l.pre_approved?'✅ Pre-approved':null,l.phone].filter(Boolean);
+      info.appendChild(el('div','call-meta',parts.join(' · ')));
+      row.appendChild(info);
+      const right=el('div','call-right');
+      const sw=el('div','score-wrap');const bar=el('div','score-bar');const fill=el('div','score-fill');
+      fill.style.cssText='width:'+(l.score||0)+'%;background:'+scoreColor(l.score||0);bar.appendChild(fill);
+      const num=document.createElement('b');num.textContent=l.score||0;sw.appendChild(bar);sw.appendChild(num);
+      right.appendChild(sw);
+      if(l.phone){const a=el('a','call-btn',null);a.href='tel:'+String(l.phone).replace(/\s/g,'');a.textContent='📞 Call';right.appendChild(a);}
+      row.appendChild(right);box.appendChild(row);
+    });
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+async function loadLeads(){
+  const box=document.getElementById('leads-table');
+  try{
+    const d=await getJSON('/api/leads/'+encodeURIComponent(AGENT_ID));
+    const rows=(d.leads||[]).map(l=>[
+      l.name||'—', l.phone||'—', l.budget||'—', l.timeline||'—',
+      badge((l.temperature||'cold'),tempClass(l.temperature)),
+      l.conversation_stage||'new',
+    ]);
+    box.replaceChildren(rows.length?buildTable(['Name','Phone','Budget','Timeline','Temp','Stage'],rows):emptyState('No leads yet.'));
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+async function loadListings(){
+  const box=document.getElementById('listings-table');
+  try{
+    const d=await getJSON('/api/listings/'+encodeURIComponent(AGENT_ID));
+    const rows=(d.listings||[]).map(l=>[
+      l.address||l.title||'—',
+      l.price!=null?('$'+l.price):'—',
+      l.bedrooms!=null?(l.bedrooms+' bed'):'—',
+      l.status||'active',
+    ]);
+    box.replaceChildren(rows.length?buildTable(['Address','Price','Beds','Status'],rows):emptyState('No listings yet.'));
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+async function loadAppointments(){
+  const box=document.getElementById('appts-table');
+  try{
+    const d=await getJSON('/api/appointments/'+encodeURIComponent(AGENT_ID));
+    const rows=(d.appointments||[]).map(a=>[
+      a.scheduled_at||a.date||'—', a.lead_name||a.name||'—', a.address||a.location||'—',
+      badge(a.status||'booked','b-new'),
+    ]);
+    box.replaceChildren(rows.length?buildTable(['When','Lead','Location','Status'],rows):emptyState('No appointments yet.'));
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+async function loadRenewals(){
+  const box=document.getElementById('renewals-table');
+  try{
+    const d=await getJSON('/api/renewals/leases/'+encodeURIComponent(AGENT_ID));
+    const rows=(d.leases||[]).map(l=>[
+      l.tenant_name||'—', l.address||'—',
+      l.current_rent!=null?('$'+l.current_rent+'/wk'):'—',
+      l.lease_end||'—', badge(l.status||'active','b-won'),
+    ]);
+    box.replaceChildren(rows.length?buildTable(['Tenant','Address','Rent','Lease ends','Status'],rows):emptyState('No leases on file yet.'));
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+async function loadRent(){
+  const box=document.getElementById('rent-table');
+  try{
+    const d=await getJSON('/api/rent/payments/'+encodeURIComponent(AGENT_ID));
+    const rows=(d.payments||[]).map(p=>{
+      const st=(p.status||'pending');
+      const cls=st==='overdue'?'b-hot':st==='paid'?'b-won':'b-pending';
+      return [p.tenant_name||'—', p.address||'—', p.amount!=null?('$'+p.amount):'—', p.due_date||'—', badge(st,cls)];
+    });
+    box.replaceChildren(rows.length?buildTable(['Tenant','Address','Amount','Due','Status'],rows):emptyState('No rent records yet.'));
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+async function loadInspections(){
+  const box=document.getElementById('insp-table');
+  try{
+    const d=await getJSON('/api/inspections/'+encodeURIComponent(AGENT_ID));
+    const rows=(d.inspections||[]).map(i=>[
+      i.address||'—', i.tenant_name||'—', i.inspection_date||i.scheduled_date||'—',
+      badge(i.status||'scheduled','b-new'),
+    ]);
+    box.replaceChildren(rows.length?buildTable(['Address','Tenant','Date','Status'],rows):emptyState('No inspections scheduled yet.'));
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+// Kick off the first (active) tab.
+loaded.overview=true; loadOverview();
+</script>
+</body>
+</html>
