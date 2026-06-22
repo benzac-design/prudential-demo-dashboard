@@ -409,11 +409,11 @@ async function loadLeads(){
   try{
     const d=await getJSON('/api/leads/'+encodeURIComponent(AGENT_ID));
     const rows=(d.leads||[]).map(l=>[
-      l.name||'—', l.phone||'—', l.budget||'—', l.timeline||'—',
-      badge((l.temperature||'cold'),tempClass(l.temperature)),
-      l.conversation_stage||'new',
+      l.name||'—', l.phone||'—', l.email||'—', l.budget||'—', l.timeline||'—',
+      l.pre_approved?'✅ Yes':'—',
+      badge(l.status||'new','b-new'),
     ]);
-    box.replaceChildren(rows.length?buildTable(['Name','Phone','Budget','Timeline','Temp','Stage'],rows):emptyState('No leads yet.'));
+    box.replaceChildren(rows.length?buildTable(['Name','Phone','Email','Budget','Timeline','Pre-approved','Status'],rows):emptyState('No leads yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
@@ -422,12 +422,13 @@ async function loadListings(){
   try{
     const d=await getJSON('/api/listings/'+encodeURIComponent(AGENT_ID));
     const rows=(d.listings||[]).map(l=>[
-      l.address||l.title||'—',
-      l.price!=null?('$'+l.price):'—',
-      l.bedrooms!=null?(l.bedrooms+' bed'):'—',
-      l.status||'active',
+      l.address||'—',
+      l.price!=null?('$'+Number(l.price).toLocaleString()):'—',
+      l.bedrooms!=null?l.bedrooms:'—',
+      l.bathrooms!=null?l.bathrooms:'—',
+      l.neighborhood||'—',
     ]);
-    box.replaceChildren(rows.length?buildTable(['Address','Price','Beds','Status'],rows):emptyState('No listings yet.'));
+    box.replaceChildren(rows.length?buildTable(['Address','Price','Beds','Baths','Neighborhood'],rows):emptyState('No listings yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
@@ -436,10 +437,11 @@ async function loadAppointments(){
   try{
     const d=await getJSON('/api/appointments/'+encodeURIComponent(AGENT_ID));
     const rows=(d.appointments||[]).map(a=>[
-      a.scheduled_at||a.date||'—', a.lead_name||a.name||'—', a.address||a.location||'—',
-      badge(a.status||'booked','b-new'),
+      a.scheduled_at?new Date(a.scheduled_at).toLocaleString():'—',
+      a.location||'—', a.notes||'—',
+      badge(a.status||'scheduled','b-new'),
     ]);
-    box.replaceChildren(rows.length?buildTable(['When','Lead','Location','Status'],rows):emptyState('No appointments yet.'));
+    box.replaceChildren(rows.length?buildTable(['When','Location','Notes','Status'],rows):emptyState('No appointments yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
@@ -449,7 +451,7 @@ async function loadRenewals(){
     const d=await getJSON('/api/renewals/leases/'+encodeURIComponent(AGENT_ID));
     const rows=(d.leases||[]).map(l=>[
       l.tenant_name||'—', l.address||'—',
-      l.current_rent!=null?('$'+l.current_rent+'/wk'):'—',
+      l.current_rent!=null?('$'+l.current_rent+'/'+(l.rent_period==='month'?'mo':'wk')):'—',
       l.lease_end||'—', badge(l.status||'active','b-won'),
     ]);
     box.replaceChildren(rows.length?buildTable(['Tenant','Address','Rent','Lease ends','Status'],rows):emptyState('No leases on file yet.'));
@@ -474,7 +476,7 @@ async function loadInspections(){
   try{
     const d=await getJSON('/api/inspections/'+encodeURIComponent(AGENT_ID));
     const rows=(d.inspections||[]).map(i=>[
-      i.address||'—', i.tenant_name||'—', i.inspection_date||i.scheduled_date||'—',
+      i.address||'—', i.tenant_name||'—', i.next_inspection_date||'—',
       badge(i.status||'scheduled','b-new'),
     ]);
     box.replaceChildren(rows.length?buildTable(['Address','Tenant','Date','Status'],rows):emptyState('No inspections scheduled yet.'));
