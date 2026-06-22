@@ -550,10 +550,29 @@ I'd love to come out for a free, no-obligation walk-through to give you an exact
   <h2 class="page-title">🛠️ Smart Maintenance Triage</h2>
   <p class="page-sub">Tenants text a repair issue and the AI instantly sorts emergency from routine, replies to reassure the tenant, and alerts Ash with a prioritised summary and the recommended next step. Nothing dangerous waits in an inbox overnight.</p>
 
-  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
-    <div class="stat"><div class="n">2</div><div class="l">🚨 Emergencies</div><div class="t flat">Flagged for same-day action</div></div>
-    <div class="stat"><div class="n">5</div><div class="l">⚠️ Urgent</div><div class="t flat">24–48 hour window</div></div>
-    <div class="stat"><div class="n">11</div><div class="l">🛠️ Routine</div><div class="t flat">Scheduled within the week</div></div>
+  <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat" style="border-left:4px solid var(--red)"><div class="n">2</div><div class="l">🚨 Emergencies</div><div class="t flat">Flagged for same-day action</div></div>
+    <div class="stat" style="border-left:4px solid var(--amber)"><div class="n">5</div><div class="l">⚠️ Urgent</div><div class="t flat">24–48 hour window</div></div>
+    <div class="stat" style="border-left:4px solid var(--green)"><div class="n">11</div><div class="l">🛠️ Routine</div><div class="t flat">Scheduled within the week</div></div>
+    <div class="stat" style="border-left:4px solid var(--accent)"><div class="n">18</div><div class="l">✅ Resolved (30d)</div><div class="t up">▲ all within SLA</div></div>
+  </div>
+
+  <div class="highlight-row" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="hl-card" style="background:linear-gradient(135deg,#eef6ff,#f7fbff);border-color:#bfdbfe">
+      <div class="hl-l" style="color:#1d4ed8">⚡ Avg AI Response</div>
+      <div class="hl-n" style="color:#1d4ed8">8 sec</div>
+      <div class="hl-sub" style="color:#2563eb">From tenant text to triage + reply</div>
+    </div>
+    <div class="hl-card" style="background:linear-gradient(135deg,#e3f7ec,#f3fdf7);border-color:#bbf7d0">
+      <div class="hl-l" style="color:#166534">🎯 Within SLA</div>
+      <div class="hl-n" style="color:#166534">100%</div>
+      <div class="hl-sub" style="color:#15803d">Emergencies actioned same day</div>
+    </div>
+    <div class="hl-card" style="background:linear-gradient(135deg,#fff7ed,#fffbf5);border-color:#fed7aa">
+      <div class="hl-l" style="color:#9a3412">🌙 After-Hours Caught</div>
+      <div class="hl-n" style="color:#9a3412">6</div>
+      <div class="hl-sub" style="color:#c2410c">Handled while the office was closed</div>
+    </div>
   </div>
 
   <div class="card">
@@ -570,14 +589,42 @@ I'd love to come out for a free, no-obligation walk-through to give you an exact
   </div>
 
   <div class="card">
-    <div class="card-h"><h3>Recent Maintenance Requests</h3><span class="meta">Auto-triaged by AI</span></div>
+    <div class="card-h"><h3>Recent Maintenance Requests</h3><span class="meta">Auto-triaged by AI · last 48 hours</span></div>
     <table>
-      <thead><tr><th>Tenant</th><th>Property</th><th>Issue</th><th>Category</th><th>Priority</th></tr></thead>
+      <thead><tr><th>Tenant</th><th>Property</th><th>Issue</th><th>Priority</th><th>Assigned to</th><th>Response</th><th>Status</th></tr></thead>
       <tbody>
-        <tr><td class="addr">Jordan Lee</td><td>12/30 Brooks St, Macquarie Fields</td><td>Water coming through kitchen ceiling</td><td>Plumbing</td><td><span class="badge b-hot">🚨 EMERGENCY</span></td></tr>
-        <tr><td class="addr">Priya Nair</td><td>7 Acacia Cl, Ingleburn</td><td>No hot water since this morning</td><td>Appliance</td><td><span class="badge b-warm">⚠️ URGENT</span></td></tr>
-        <tr><td class="addr">Tom Becker</td><td>3/14 Hingston Pde, Glenfield</td><td>Dripping bathroom tap</td><td>Plumbing</td><td><span class="badge b-nurture">🛠️ ROUTINE</span></td></tr>
-        <tr><td class="addr">Sara Conti</td><td>9 Banksia Rd, Campbelltown</td><td>Front door deadlock sticking</td><td>Locks/Security</td><td><span class="badge b-warm">⚠️ URGENT</span></td></tr>
+        <tr>
+          <td class="addr">Jordan Lee</td><td>12/30 Brooks St, Macquarie Fields</td>
+          <td>Water through kitchen ceiling <span class="small">· Plumbing</span></td>
+          <td><span class="badge b-hot">🚨 EMERGENCY</span></td>
+          <td>Rapid Response Plumbing</td>
+          <td><span class="up" style="font-weight:700">6 sec</span></td>
+          <td><span class="badge b-pending">In progress</span></td>
+        </tr>
+        <tr>
+          <td class="addr">Priya Nair</td><td>7 Acacia Cl, Ingleburn</td>
+          <td>No hot water since morning <span class="small">· Appliance</span></td>
+          <td><span class="badge b-warm">⚠️ URGENT</span></td>
+          <td>Southwest Hot Water</td>
+          <td><span class="up" style="font-weight:700">9 sec</span></td>
+          <td><span class="badge b-new">Booked today</span></td>
+        </tr>
+        <tr>
+          <td class="addr">Sara Conti</td><td>9 Banksia Rd, Campbelltown</td>
+          <td>Front deadlock sticking <span class="small">· Locks/Security</span></td>
+          <td><span class="badge b-warm">⚠️ URGENT</span></td>
+          <td>Macarthur Locksmiths</td>
+          <td><span class="up" style="font-weight:700">11 sec</span></td>
+          <td><span class="badge b-new">Booked tomorrow</span></td>
+        </tr>
+        <tr>
+          <td class="addr">Tom Becker</td><td>3/14 Hingston Pde, Glenfield</td>
+          <td>Dripping bathroom tap <span class="small">· Plumbing</span></td>
+          <td><span class="badge b-nurture">🛠️ ROUTINE</span></td>
+          <td>Scheduled — next visit</td>
+          <td><span class="up" style="font-weight:700">7 sec</span></td>
+          <td><span class="badge b-won">Resolved</span></td>
+        </tr>
       </tbody>
     </table>
   </div>
