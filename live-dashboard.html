@@ -253,18 +253,26 @@
   };
 
   var gate=document.getElementById('__authgate');
-  if(sessionStorage.getItem('dash_auth')==='1'){gate.style.display='none';return;}
-  document.documentElement.style.overflow='hidden';
-
-  // Pre-warm the backend the moment the page loads, so it's already awake by
-  // the time the user submits — removes the serverless cold-start wait.
-  try{ _f(API+'/health',{cache:'no-store'}).catch(function(){}); }catch(e){}
-
   var err=document.getElementById('__autherr');
   var btn=document.getElementById('__authbtn');
   var label=document.getElementById('__authbtnlabel');
   var input=document.getElementById('__authpw');
   var busy=false;
+
+  function showGate(){
+    gate.style.display='';
+    gate.style.transition='';
+    gate.style.opacity='1';
+    document.documentElement.style.overflow='hidden';
+    busy=false; btn.disabled=false;
+    if(input){ input.value=''; setTimeout(function(){ try{input.focus();}catch(e){} },50); }
+    // Pre-warm the backend so it's awake by the time the user submits.
+    try{ _f(API+'/health',{cache:'no-store'}).catch(function(){}); }catch(e){}
+  }
+  function hideGate(){
+    gate.style.transition='opacity .3s'; gate.style.opacity='0';
+    setTimeout(function(){gate.style.display='none';document.documentElement.style.overflow='';},300);
+  }
   function setBusy(on){
     busy=on; btn.disabled=on;
     gate.classList.toggle('loading',on);
@@ -287,14 +295,28 @@
       .then(function(d){
         if(d&&d.ok){
           sessionStorage.setItem('dash_auth','1');sessionStorage.setItem('dash_pw',pw);
-          gate.style.transition='opacity .3s'; gate.style.opacity='0';
-          setTimeout(function(){gate.style.display='none';document.documentElement.style.overflow='';},300);
+          setBusy(false);
+          hideGate();
+          // Reload whatever tab is open so its data fetches with the new password.
+          if(window.__reloadActiveTab) window.__reloadActiveTab();
         }else{ fail(); }
       })
       .catch(function(){ fail(); });
   }
+
+  // Always wire the controls so a mid-session re-prompt works.
   btn.addEventListener('click',tryLogin);
   input.addEventListener('keydown',function(e){if(e.key==='Enter')tryLogin();});
+
+  // Re-prompt hook: any /api/ call that 401s clears the stale auth and re-shows the gate.
+  window.__requireAuth=function(){
+    sessionStorage.removeItem('dash_auth');
+    showGate();
+  };
+
+  // First-load: skip the gate only if already authed; otherwise show it.
+  if(sessionStorage.getItem('dash_auth')==='1'){ gate.style.display='none'; }
+  else{ showGate(); }
 })();
 </script>
 
@@ -402,6 +424,10 @@ function errState(msg){const d=el('div',null,null);d.style.cssText='padding:24px
 
 async function getJSON(path){
   const r=await fetch(API_BASE+path);
+  if(r.status===401){
+    if(window.__requireAuth) window.__requireAuth();
+    throw new Error('Session expired — please log in again.');
+  }
   if(!r.ok) throw new Error('HTTP '+r.status);
   return r.json();
 }
@@ -426,6 +452,14 @@ function activate(tab){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 document.querySelectorAll('nav button').forEach(btn=>btn.addEventListener('click',()=>activate(btn.dataset.tab)));
+
+// Re-fetch the currently-open tab (used after a mid-session re-login).
+window.__reloadActiveTab=function(){
+  const b=document.querySelector('nav button.active');
+  const tab=(b&&b.dataset.tab)||'overview';
+  loaded[tab]=false;
+  activate(tab);
+};
 
 // ───────── Loaders ─────────
 async function loadOverview(){
