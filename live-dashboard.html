@@ -173,6 +173,10 @@
     .stats,.highlight-row,.roi-grid,.stack{grid-template-columns:1fr}
     header{flex-direction:column;align-items:flex-start;gap:12px}
   }
+  .adf{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid #d4d9e2;border-radius:8px;font-size:13.5px;margin-bottom:7px}
+  .adbtn{margin-top:4px;padding:10px 16px;background:var(--navy,#13294b);color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer}
+  .adbtn:disabled{opacity:.6;cursor:default}
+  .adres{margin-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.5}
 </style>
 </head>
 <body>
@@ -344,6 +348,7 @@
   <button data-tab="inspections">🏠 Inspections</button>
   <button data-tab="maintenance">🛠️ Maintenance</button>
   <button data-tab="report">📄 Monthly Report</button>
+  <button data-tab="adddata">➕ Add Data</button>
 </nav>
 
 <main>
@@ -420,6 +425,74 @@
   <h2 class="page-title">Monthly Report</h2>
   <p class="page-sub">The owner-ready monthly report, including the rental-portfolio breakdown.</p>
   <div id="report-box"><p class="small" style="padding:18px 20px">Loading…</p></div>
+</section>
+
+<!-- ADD DATA -->
+<section class="tab" id="adddata">
+  <h2 class="page-title">Add Data</h2>
+  <p class="page-sub">Enter real records — they save to the live system and the AI starts working them automatically (follow-ups, arrears, renewals, inspection notices). Records appear in the matching tab.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px">
+
+    <div class="card"><div style="padding:18px 20px">
+      <h3 style="margin:0 0 12px">🏘️ New Lease / Tenancy</h3>
+      <input id="ad-ls-tenant" placeholder="Tenant name" class="adf">
+      <input id="ad-ls-address" placeholder="Property address" class="adf">
+      <input id="ad-ls-rent" type="number" placeholder="Current rent / week" class="adf">
+      <input id="ad-ls-end" type="date" placeholder="Lease end date" class="adf">
+      <input id="ad-ls-phone" placeholder="Tenant phone (optional)" class="adf">
+      <input id="ad-ls-email" placeholder="Tenant email (optional)" class="adf">
+      <button id="ad-ls-btn" class="adbtn">Add Lease</button>
+      <div id="ad-ls-res" class="adres"></div>
+    </div></div>
+
+    <div class="card"><div style="padding:18px 20px">
+      <h3 style="margin:0 0 12px">💸 Rent Due / Payment</h3>
+      <input id="ad-rp-tenant" placeholder="Tenant name" class="adf">
+      <input id="ad-rp-address" placeholder="Property address" class="adf">
+      <input id="ad-rp-amount" type="number" placeholder="Amount / week" class="adf">
+      <input id="ad-rp-due" type="date" placeholder="Due date" class="adf">
+      <input id="ad-rp-phone" placeholder="Tenant phone (optional)" class="adf">
+      <input id="ad-rp-email" placeholder="Tenant email (optional)" class="adf">
+      <button id="ad-rp-btn" class="adbtn">Add Rent Record</button>
+      <div id="ad-rp-res" class="adres"></div>
+    </div></div>
+
+    <div class="card"><div style="padding:18px 20px">
+      <h3 style="margin:0 0 12px">🏠 Inspection</h3>
+      <input id="ad-is-tenant" placeholder="Tenant name" class="adf">
+      <input id="ad-is-address" placeholder="Property address" class="adf">
+      <input id="ad-is-date" type="date" placeholder="Inspection date" class="adf">
+      <input id="ad-is-freq" type="number" placeholder="Repeat every N months (default 6)" class="adf">
+      <input id="ad-is-phone" placeholder="Tenant phone (optional)" class="adf">
+      <input id="ad-is-email" placeholder="Tenant email (optional)" class="adf">
+      <button id="ad-is-btn" class="adbtn">Add Inspection</button>
+      <div id="ad-is-res" class="adres"></div>
+    </div></div>
+
+    <div class="card"><div style="padding:18px 20px">
+      <h3 style="margin:0 0 12px">👤 New Lead</h3>
+      <input id="ad-nl-name" placeholder="Name" class="adf">
+      <input id="ad-nl-email" placeholder="Email" class="adf">
+      <input id="ad-nl-phone" placeholder="Phone (+61…)" class="adf">
+      <input id="ad-nl-msg" placeholder="Enquiry / message (optional)" class="adf">
+      <button id="ad-nl-btn" class="adbtn">Add Lead</button>
+      <div id="ad-nl-res" class="adres"></div>
+    </div></div>
+
+    <div class="card"><div style="padding:18px 20px">
+      <h3 style="margin:0 0 12px">📋 Applicant (saves + AI screens)</h3>
+      <input id="ad-aa-name" placeholder="Applicant name" class="adf">
+      <input id="ad-aa-address" placeholder="Property applied for" class="adf">
+      <input id="ad-aa-rent" type="number" placeholder="Weekly rent" class="adf">
+      <input id="ad-aa-income" type="number" placeholder="Annual income" class="adf">
+      <input id="ad-aa-employment" placeholder="Employment" class="adf">
+      <input id="ad-aa-history" placeholder="Rental history" class="adf">
+      <input id="ad-aa-refs" placeholder="References" class="adf">
+      <button id="ad-aa-btn" class="adbtn">Add &amp; Screen</button>
+      <div id="ad-aa-res" class="adres"></div>
+    </div></div>
+
+  </div>
 </section>
 
 </main>
@@ -639,6 +712,51 @@ async function loadReport(){
     box.replaceChildren(frame);
   }catch(e){box.replaceChildren(errState(e.message));}
 }
+
+// ───────── Add Data forms ─────────
+function adVal(id){const e=document.getElementById(id);return e?e.value.trim():'';}
+function adNum(id){const v=adVal(id);return v===''?null:Number(v);}
+async function adPost(btnId, ep, payload, resId, okMsg, reloadTab, clearIds){
+  const out=document.getElementById(resId);
+  const btn=document.getElementById(btnId);
+  out.style.color='var(--muted)'; out.textContent='Saving…';
+  btn.disabled=true;
+  try{
+    const r=await fetch(API_BASE+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(r.status===401){ if(window.__requireAuth) window.__requireAuth(); throw new Error('Session expired — log in again.'); }
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    out.style.color='#15803d';
+    let msg='✓ '+okMsg;
+    if(d&&d.application&&d.application.recommendation){
+      msg+=' — AI screening: '+d.application.recommendation.toUpperCase()+' ('+d.application.score+'/100)';
+    }
+    out.textContent=msg;
+    if(reloadTab){ loaded[reloadTab]=false; }   // re-fetch that tab next time it's opened
+    if(clearIds){ clearIds.forEach(id=>{const e=document.getElementById(id);if(e)e.value='';}); }
+  }catch(e){ out.style.color='#b91c1c'; out.textContent='✗ '+e.message; }
+  finally{ btn.disabled=false; }
+}
+
+document.getElementById('ad-ls-btn').addEventListener('click',()=>adPost('ad-ls-btn','/api/renewals/leases',
+  {agent_id:AGENT_ID,tenant_name:adVal('ad-ls-tenant'),address:adVal('ad-ls-address'),current_rent:adNum('ad-ls-rent'),lease_end:adVal('ad-ls-end'),rent_period:'week',tenant_phone:adVal('ad-ls-phone'),tenant_email:adVal('ad-ls-email')},
+  'ad-ls-res','Lease added — now monitored for renewal.','renewals',['ad-ls-tenant','ad-ls-address','ad-ls-rent','ad-ls-end','ad-ls-phone','ad-ls-email']));
+
+document.getElementById('ad-rp-btn').addEventListener('click',()=>adPost('ad-rp-btn','/api/rent/payments',
+  {agent_id:AGENT_ID,tenant_name:adVal('ad-rp-tenant'),address:adVal('ad-rp-address'),amount:adNum('ad-rp-amount'),due_date:adVal('ad-rp-due'),rent_period:'week',tenant_phone:adVal('ad-rp-phone'),tenant_email:adVal('ad-rp-email')},
+  'ad-rp-res','Rent record added — arrears now tracked.','arrears',['ad-rp-tenant','ad-rp-address','ad-rp-amount','ad-rp-due','ad-rp-phone','ad-rp-email']));
+
+document.getElementById('ad-is-btn').addEventListener('click',()=>adPost('ad-is-btn','/api/inspections',
+  {agent_id:AGENT_ID,tenant_name:adVal('ad-is-tenant'),address:adVal('ad-is-address'),next_inspection_date:adVal('ad-is-date'),frequency_months:adNum('ad-is-freq')||6,tenant_phone:adVal('ad-is-phone'),tenant_email:adVal('ad-is-email')},
+  'ad-is-res','Inspection scheduled — notice will be drafted.','inspections',['ad-is-tenant','ad-is-address','ad-is-date','ad-is-freq','ad-is-phone','ad-is-email']));
+
+document.getElementById('ad-nl-btn').addEventListener('click',()=>adPost('ad-nl-btn','/api/leads/new',
+  {agent_id:AGENT_ID,name:adVal('ad-nl-name'),email:adVal('ad-nl-email'),phone:adVal('ad-nl-phone'),message:adVal('ad-nl-msg')},
+  'ad-nl-res','Lead added — AI follow-up triggered.','leads',['ad-nl-name','ad-nl-email','ad-nl-phone','ad-nl-msg']));
+
+document.getElementById('ad-aa-btn').addEventListener('click',()=>adPost('ad-aa-btn','/api/applications',
+  {agent_id:AGENT_ID,applicant_name:adVal('ad-aa-name'),address:adVal('ad-aa-address'),weekly_rent:adNum('ad-aa-rent'),annual_income:adNum('ad-aa-income'),employment:adVal('ad-aa-employment'),rental_history:adVal('ad-aa-history'),references_note:adVal('ad-aa-refs')},
+  'ad-aa-res','Applicant saved & screened.',null,['ad-aa-name','ad-aa-address','ad-aa-rent','ad-aa-income','ad-aa-employment','ad-aa-history','ad-aa-refs']));
 
 // Kick off the first (active) tab.
 loaded.overview=true; loadOverview();
