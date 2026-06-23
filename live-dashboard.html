@@ -342,6 +342,8 @@
   <button data-tab="renewals">🔄 Lease Renewals</button>
   <button data-tab="arrears">💸 Rent</button>
   <button data-tab="inspections">🏠 Inspections</button>
+  <button data-tab="maintenance">🛠️ Maintenance</button>
+  <button data-tab="report">📄 Monthly Report</button>
 </nav>
 
 <main>
@@ -406,6 +408,20 @@
   <div class="card"><div id="insp-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
 </section>
 
+<!-- MAINTENANCE -->
+<section class="tab" id="maintenance">
+  <h2 class="page-title">Maintenance</h2>
+  <p class="page-sub">Tenant-reported maintenance jobs, triaged by the AI.</p>
+  <div class="card"><div id="maint-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
+</section>
+
+<!-- MONTHLY REPORT -->
+<section class="tab" id="report">
+  <h2 class="page-title">Monthly Report</h2>
+  <p class="page-sub">The owner-ready monthly report, including the rental-portfolio breakdown.</p>
+  <div id="report-box"><p class="small" style="padding:18px 20px">Loading…</p></div>
+</section>
+
 </main>
 
 <script>
@@ -444,7 +460,7 @@ function buildTable(headers, rows){
 
 // ───────── Tab navigation (lazy-load each tab once) ─────────
 const loaded={};
-const loaders={overview:loadOverview,calllist:loadCallList,leads:loadLeads,listings:loadListings,appointments:loadAppointments,renewals:loadRenewals,arrears:loadRent,inspections:loadInspections};
+const loaders={overview:loadOverview,calllist:loadCallList,leads:loadLeads,listings:loadListings,appointments:loadAppointments,renewals:loadRenewals,arrears:loadRent,inspections:loadInspections,maintenance:loadMaintenance,report:loadReport};
 function activate(tab){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   document.querySelectorAll('.tab').forEach(p=>p.classList.toggle('active',p.id===tab));
@@ -591,6 +607,36 @@ async function loadInspections(){
       badge(i.status||'scheduled','b-new'),
     ]);
     box.replaceChildren(rows.length?buildTable(['Address','Tenant','Date','Status'],rows):emptyState('No inspections scheduled yet.'));
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+async function loadMaintenance(){
+  const box=document.getElementById('maint-table');
+  try{
+    const d=await getJSON('/api/maintenance/'+encodeURIComponent(AGENT_ID));
+    const rows=(d.jobs||[]).map(j=>{
+      const st=(j.status||'open');
+      const cls=st==='resolved'?'b-won':st==='open'?'b-hot':'b-pending';
+      return [j.tenant_name||'—', j.address||'—', j.issue||j.message||'—', j.priority||j.category||'—', badge(st,cls)];
+    });
+    box.replaceChildren(rows.length?buildTable(['Tenant','Address','Issue','Priority','Status'],rows):emptyState('No maintenance jobs yet.'));
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+async function loadReport(){
+  const box=document.getElementById('report-box');
+  try{
+    // Report endpoint returns HTML (and requires the dashboard auth header,
+    // which the window.fetch wrapper attaches), so fetch the text and isolate
+    // it in an iframe via srcdoc.
+    const r=await fetch(API_BASE+'/api/reports/'+encodeURIComponent(AGENT_ID)+'/monthly');
+    if(r.status===401){ if(window.__requireAuth) window.__requireAuth(); throw new Error('Session expired — please log in again.'); }
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const html=await r.text();
+    const frame=el('iframe');
+    frame.style.cssText='width:100%;height:1400px;border:0;border-radius:12px;background:#fff';
+    frame.srcdoc=html;
+    box.replaceChildren(frame);
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
