@@ -177,6 +177,21 @@
   .adbtn{margin-top:4px;padding:10px 16px;background:var(--navy,#13294b);color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer}
   .adbtn:disabled{opacity:.6;cursor:default}
   .adres{margin-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.5}
+  tbody tr.clickable{cursor:pointer}
+  tbody tr.clickable:hover{background:#f1f5fb}
+  .modal-ov{position:fixed;inset:0;background:rgba(10,20,40,.55);display:none;z-index:9000;justify-content:center;padding:40px 16px;overflow:auto}
+  .modal-ov.open{display:flex;align-items:flex-start}
+  .modal{background:#fff;border-radius:14px;max-width:760px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+  .modal-h{background:var(--navy,#13294b);color:#fff;padding:18px 22px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .modal-h h3{margin:0;font-size:18px;line-height:1.25}
+  .modal-h .sub{font-size:13px;opacity:.82;margin-top:3px}
+  .modal-x{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:8px;font-size:15px;cursor:pointer;flex:none}
+  .modal-b{padding:8px 22px 22px;max-height:74vh;overflow:auto}
+  .det-sec{margin-top:18px}
+  .det-sec h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--navy,#13294b)}
+  .det-kv{display:grid;grid-template-columns:150px 1fr;gap:4px 12px;font-size:13.5px;margin-bottom:8px}
+  .det-kv .k{color:#5b6470}
+  .det-note{margin-top:6px;font-size:12.5px;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 10px}
 </style>
 </head>
 <body>
@@ -497,6 +512,17 @@
 
 </main>
 
+<!-- DETAIL MODAL -->
+<div class="modal-ov" id="detail-ov">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-h">
+      <div><h3 id="detail-title">Details</h3><div class="sub" id="detail-sub"></div></div>
+      <button class="modal-x" id="detail-x" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-b" id="detail-body"></div>
+  </div>
+</div>
+
 <script>
 // ───────── Config ─────────
 const API_BASE = 'https://realestate-agent-three.vercel.app';
@@ -530,6 +556,134 @@ function buildTable(headers, rows){
   rows.forEach(cells=>{const tr=el('tr');cells.forEach(c=>{tr.appendChild(c instanceof Node?(()=>{const cell=document.createElement('td');cell.appendChild(c);return cell;})():td(c));});tbody.appendChild(tr);});
   table.appendChild(tbody); return table;
 }
+
+// Same as buildTable, but each row is clickable and opens the detail modal
+// for the matching record.
+function buildClickableTable(headers, rows, records){
+  const table=buildTable(headers, rows);
+  table.querySelectorAll('tbody tr').forEach((tr,i)=>{
+    tr.classList.add('clickable');
+    tr.title='Click for full details';
+    tr.addEventListener('click',()=>openDetail(records[i]));
+  });
+  return table;
+}
+
+// ───────── Consolidated detail modal ─────────
+function _ov(){return document.getElementById('detail-ov');}
+function norm(s){return String(s||'').trim().toLowerCase();}
+function recName(r){return r.tenant_name||r.applicant_name||r.name||'';}
+function closeModal(){ _ov().classList.remove('open'); document.documentElement.style.overflow=''; }
+function openModalShell(title, sub){
+  document.getElementById('detail-title').textContent=title||'Details';
+  document.getElementById('detail-sub').textContent=sub||'';
+  document.getElementById('detail-body').replaceChildren(el('p','small','Loading…'));
+  _ov().classList.add('open');
+  document.documentElement.style.overflow='hidden';
+}
+function detSection(title, blocks, note){
+  const sec=el('div','det-sec');
+  sec.appendChild(el('h4',null,title));
+  blocks.forEach(pairs=>{
+    const grid=el('div','det-kv');
+    pairs.forEach(([k,v])=>{
+      if(v==null||v==='') return;
+      grid.appendChild(el('div','k',k));
+      grid.appendChild(el('div','v',String(v)));
+    });
+    if(grid.childNodes.length) sec.appendChild(grid);
+  });
+  if(note) sec.appendChild(el('div','det-note',note));
+  return sec;
+}
+async function openDetail(rec){
+  if(!rec) return;
+  const address=rec.address||''; const name=recName(rec);
+  openModalShell(address||name||'Details', address&&name?name:(address?'Property':(name?'Contact':'Record')));
+  const body=document.getElementById('detail-body');
+  try{
+    const enc=encodeURIComponent(AGENT_ID);
+    const [leasesD,rentD,inspD,appsD,leadsD,listD,maintD]=await Promise.all([
+      getJSON('/api/renewals/leases/'+enc).catch(()=>({})),
+      getJSON('/api/rent/payments/'+enc).catch(()=>({})),
+      getJSON('/api/inspections/'+enc).catch(()=>({})),
+      getJSON('/api/applications/'+enc).catch(()=>({})),
+      getJSON('/api/leads/'+enc).catch(()=>({})),
+      getJSON('/api/listings/'+enc).catch(()=>({})),
+      getJSON('/api/maintenance/'+enc).catch(()=>({})),
+    ]);
+    const byAddr=x=> address && norm(x.address)===norm(address);
+    const byName=x=> name && norm(recName(x))===norm(name);
+    const match=x=> byAddr(x)||byName(x);
+
+    const lists=(listD.listings||[]).filter(byAddr);
+    const leases=(leasesD.leases||[]).filter(match);
+    const rents=(rentD.payments||[]).filter(match);
+    const insps=(inspD.inspections||[]).filter(match);
+    const apps=(appsD.applications||[]).filter(match);
+    const leads=(leadsD.leads||[]).filter(byName);
+    const maint=(maintD.jobs||[]).filter(match);
+
+    body.replaceChildren();
+
+    lists.forEach(l=> body.appendChild(detSection('Listing',[[
+      ['Address',l.address],
+      ['Price',l.price!=null?'$'+Number(l.price).toLocaleString():''],
+      ['Beds',l.bedrooms],['Baths',l.bathrooms],['Neighbourhood',l.neighborhood],
+      ['Description',l.description]
+    ]])));
+
+    leases.forEach(l=> body.appendChild(detSection('Lease / Tenancy',[[
+      ['Tenant',l.tenant_name],['Address',l.address],
+      ['Rent',l.current_rent!=null?'$'+l.current_rent+'/'+(l.rent_period==='month'?'mo':'wk'):''],
+      ['Lease ends',l.lease_end],['Status',l.status],
+      ['Phone',l.tenant_phone],['Email',l.tenant_email]
+    ]],'The AI auto-drafts a renewal offer 60–90 days before the lease end date.')));
+
+    if(rents.length) body.appendChild(detSection('Rent Payments',
+      rents.map(p=>[['Amount',p.amount!=null?'$'+p.amount:''],['Due',p.due_date],['Status',p.status||'pending']]),
+      'The AI reminds before rent is due and chases arrears automatically.'));
+
+    if(insps.length) body.appendChild(detSection('Inspections',
+      insps.map(i=>[['Next inspection',i.next_inspection_date],['Repeat',(i.frequency_months||6)+' months'],['Status',i.status||'scheduled']]),
+      'A NSW-compliant notice (≥7 days) is drafted before each inspection.'));
+
+    apps.forEach(a=> body.appendChild(detSection('Applicant Screening',[[
+      ['Applicant',a.applicant_name],['Property',a.address],
+      ['Weekly rent',a.weekly_rent!=null?'$'+a.weekly_rent:''],
+      ['Annual income',a.annual_income!=null?'$'+Number(a.annual_income).toLocaleString():''],
+      ['Rent-to-income',a.rent_to_income],['Employment',a.employment],
+      ['Rental history',a.rental_history],['References',a.references_note],
+      ['Recommendation',(a.recommendation?a.recommendation.toUpperCase():'')+(a.score!=null?' ('+a.score+'/100)':'')],
+      ['Rationale',a.rationale],
+      ['Flags',(a.flags&&a.flags.length)?a.flags.join(', '):'']
+    ]])));
+
+    leads.forEach(l=> body.appendChild(detSection('Lead',[[
+      ['Name',l.name],['Phone',l.phone],['Email',l.email],
+      ['Budget',l.budget],['Timeline',l.timeline],
+      ['Pre-approved',l.pre_approved?'Yes':''],['Status',l.status],
+      ['Enquiry',l.message]
+    ]],'The AI sends an instant follow-up and qualifies the lead on reply.')));
+
+    if(maint.length) body.appendChild(detSection('Maintenance',
+      maint.map(j=>[['Issue',j.issue||j.message],['Priority',j.priority||j.category],['Status',j.status||'open'],['Assigned to',j.assigned_to]]),
+      'The AI triages each reported issue and drafts the next action.'));
+
+    // A record with no address/name to cross-reference (e.g. an appointment).
+    if(!address && !name){
+      body.appendChild(detSection('Appointment',[[
+        ['When',rec.scheduled_at?new Date(rec.scheduled_at).toLocaleString():''],
+        ['Location',rec.location],['Notes',rec.notes],['Status',rec.status]
+      ]]));
+    }
+
+    if(!body.childNodes.length) body.appendChild(emptyState('No additional details on file yet.'));
+  }catch(e){ body.replaceChildren(errState(e.message)); }
+}
+document.getElementById('detail-x').addEventListener('click',closeModal);
+_ov().addEventListener('click',e=>{ if(e.target===_ov()) closeModal(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
 // ───────── Tab navigation (lazy-load each tab once) ─────────
 const loaded={};
@@ -608,12 +762,13 @@ async function loadLeads(){
   const box=document.getElementById('leads-table');
   try{
     const d=await getJSON('/api/leads/'+encodeURIComponent(AGENT_ID));
-    const rows=(d.leads||[]).map(l=>[
+    const recs=(d.leads||[]);
+    const rows=recs.map(l=>[
       l.name||'—', l.phone||'—', l.email||'—', l.budget||'—', l.timeline||'—',
       l.pre_approved?'✅ Yes':'—',
       badge(l.status||'new','b-new'),
     ]);
-    box.replaceChildren(rows.length?buildTable(['Name','Phone','Email','Budget','Timeline','Pre-approved','Status'],rows):emptyState('No leads yet.'));
+    box.replaceChildren(rows.length?buildClickableTable(['Name','Phone','Email','Budget','Timeline','Pre-approved','Status'],rows,recs):emptyState('No leads yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
@@ -621,14 +776,15 @@ async function loadListings(){
   const box=document.getElementById('listings-table');
   try{
     const d=await getJSON('/api/listings/'+encodeURIComponent(AGENT_ID));
-    const rows=(d.listings||[]).map(l=>[
+    const recs=(d.listings||[]);
+    const rows=recs.map(l=>[
       l.address||'—',
       l.price!=null?('$'+Number(l.price).toLocaleString()):'—',
       l.bedrooms!=null?l.bedrooms:'—',
       l.bathrooms!=null?l.bathrooms:'—',
       l.neighborhood||'—',
     ]);
-    box.replaceChildren(rows.length?buildTable(['Address','Price','Beds','Baths','Neighborhood'],rows):emptyState('No listings yet.'));
+    box.replaceChildren(rows.length?buildClickableTable(['Address','Price','Beds','Baths','Neighborhood'],rows,recs):emptyState('No listings yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
@@ -636,12 +792,13 @@ async function loadAppointments(){
   const box=document.getElementById('appts-table');
   try{
     const d=await getJSON('/api/appointments/'+encodeURIComponent(AGENT_ID));
-    const rows=(d.appointments||[]).map(a=>[
+    const recs=(d.appointments||[]);
+    const rows=recs.map(a=>[
       a.scheduled_at?new Date(a.scheduled_at).toLocaleString():'—',
       a.location||'—', a.notes||'—',
       badge(a.status||'scheduled','b-new'),
     ]);
-    box.replaceChildren(rows.length?buildTable(['When','Location','Notes','Status'],rows):emptyState('No appointments yet.'));
+    box.replaceChildren(rows.length?buildClickableTable(['When','Location','Notes','Status'],rows,recs):emptyState('No appointments yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
@@ -649,12 +806,13 @@ async function loadRenewals(){
   const box=document.getElementById('renewals-table');
   try{
     const d=await getJSON('/api/renewals/leases/'+encodeURIComponent(AGENT_ID));
-    const rows=(d.leases||[]).map(l=>[
+    const recs=(d.leases||[]);
+    const rows=recs.map(l=>[
       l.tenant_name||'—', l.address||'—',
       l.current_rent!=null?('$'+l.current_rent+'/'+(l.rent_period==='month'?'mo':'wk')):'—',
       l.lease_end||'—', badge(l.status||'active','b-won'),
     ]);
-    box.replaceChildren(rows.length?buildTable(['Tenant','Address','Rent','Lease ends','Status'],rows):emptyState('No leases on file yet.'));
+    box.replaceChildren(rows.length?buildClickableTable(['Tenant','Address','Rent','Lease ends','Status'],rows,recs):emptyState('No leases on file yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
@@ -662,12 +820,13 @@ async function loadRent(){
   const box=document.getElementById('rent-table');
   try{
     const d=await getJSON('/api/rent/payments/'+encodeURIComponent(AGENT_ID));
-    const rows=(d.payments||[]).map(p=>{
+    const recs=(d.payments||[]);
+    const rows=recs.map(p=>{
       const st=(p.status||'pending');
       const cls=st==='overdue'?'b-hot':st==='paid'?'b-won':'b-pending';
       return [p.tenant_name||'—', p.address||'—', p.amount!=null?('$'+p.amount):'—', p.due_date||'—', badge(st,cls)];
     });
-    box.replaceChildren(rows.length?buildTable(['Tenant','Address','Amount','Due','Status'],rows):emptyState('No rent records yet.'));
+    box.replaceChildren(rows.length?buildClickableTable(['Tenant','Address','Amount','Due','Status'],rows,recs):emptyState('No rent records yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
@@ -675,11 +834,12 @@ async function loadInspections(){
   const box=document.getElementById('insp-table');
   try{
     const d=await getJSON('/api/inspections/'+encodeURIComponent(AGENT_ID));
-    const rows=(d.inspections||[]).map(i=>[
+    const recs=(d.inspections||[]);
+    const rows=recs.map(i=>[
       i.address||'—', i.tenant_name||'—', i.next_inspection_date||'—',
       badge(i.status||'scheduled','b-new'),
     ]);
-    box.replaceChildren(rows.length?buildTable(['Address','Tenant','Date','Status'],rows):emptyState('No inspections scheduled yet.'));
+    box.replaceChildren(rows.length?buildClickableTable(['Address','Tenant','Date','Status'],rows,recs):emptyState('No inspections scheduled yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
@@ -687,12 +847,13 @@ async function loadMaintenance(){
   const box=document.getElementById('maint-table');
   try{
     const d=await getJSON('/api/maintenance/'+encodeURIComponent(AGENT_ID));
-    const rows=(d.jobs||[]).map(j=>{
+    const recs=(d.jobs||[]);
+    const rows=recs.map(j=>{
       const st=(j.status||'open');
       const cls=st==='resolved'?'b-won':st==='open'?'b-hot':'b-pending';
       return [j.tenant_name||'—', j.address||'—', j.issue||j.message||'—', j.priority||j.category||'—', badge(st,cls)];
     });
-    box.replaceChildren(rows.length?buildTable(['Tenant','Address','Issue','Priority','Status'],rows):emptyState('No maintenance jobs yet.'));
+    box.replaceChildren(rows.length?buildClickableTable(['Tenant','Address','Issue','Priority','Status'],rows,recs):emptyState('No maintenance jobs yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
