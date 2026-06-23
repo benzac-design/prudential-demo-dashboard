@@ -366,6 +366,8 @@
   <button data-tab="arrears">💸 Rent</button>
   <button data-tab="inspections">🏠 Inspections</button>
   <button data-tab="maintenance">🛠️ Maintenance</button>
+  <button data-tab="valuation">💰 Seller Valuations</button>
+  <button data-tab="followups">📨 Follow-ups</button>
   <button data-tab="report">📄 Monthly Report</button>
   <button data-tab="adddata">➕ Add Data</button>
 </nav>
@@ -437,6 +439,20 @@
   <h2 class="page-title">Maintenance</h2>
   <p class="page-sub">Tenant-reported maintenance jobs, triaged by the AI.</p>
   <div class="card"><div id="maint-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
+</section>
+
+<!-- SELLER VALUATIONS -->
+<section class="tab" id="valuation">
+  <h2 class="page-title">Seller Valuations</h2>
+  <p class="page-sub">Seller leads captured by the “what's my home worth” valuation tool.</p>
+  <div class="card"><div id="val-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
+</section>
+
+<!-- FOLLOW-UPS -->
+<section class="tab" id="followups">
+  <h2 class="page-title">Follow-ups</h2>
+  <p class="page-sub">Scheduled follow-up messages the AI will send to leads over time.</p>
+  <div class="card"><div id="fu-table"><p class="small" style="padding:18px 20px">Loading…</p></div></div>
 </section>
 
 <!-- MONTHLY REPORT -->
@@ -691,7 +707,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
 // ───────── Tab navigation (lazy-load each tab once) ─────────
 const loaded={};
-const loaders={overview:loadOverview,calllist:loadCallList,leads:loadLeads,listings:loadListings,appointments:loadAppointments,renewals:loadRenewals,arrears:loadRent,inspections:loadInspections,maintenance:loadMaintenance,report:loadReport};
+const loaders={overview:loadOverview,calllist:loadCallList,leads:loadLeads,listings:loadListings,appointments:loadAppointments,renewals:loadRenewals,arrears:loadRent,inspections:loadInspections,maintenance:loadMaintenance,valuation:loadValuations,followups:loadFollowups,report:loadReport};
 function activate(tab){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   document.querySelectorAll('.tab').forEach(p=>p.classList.toggle('active',p.id===tab));
@@ -858,6 +874,39 @@ async function loadMaintenance(){
       return [j.tenant_name||'—', j.address||'—', j.issue||j.message||'—', j.priority||j.category||'—', badge(st,cls)];
     });
     box.replaceChildren(rows.length?buildClickableTable(['Tenant','Address','Issue','Priority','Status'],rows,recs):emptyState('No maintenance jobs yet.'));
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+async function loadValuations(){
+  const box=document.getElementById('val-table');
+  try{
+    const d=await getJSON('/api/valuation/'+encodeURIComponent(AGENT_ID));
+    const recs=(d.valuations||[]);
+    const rows=recs.map(v=>[
+      v.name||'—', v.phone||'—', v.email||'—', v.message||'—',
+      v.created_at?new Date(v.created_at).toLocaleDateString():'—',
+      badge(v.status||'new','b-new'),
+    ]);
+    box.replaceChildren(rows.length?buildClickableTable(['Name','Phone','Email','Request','Date','Status'],rows,recs):emptyState('No seller valuations yet.'));
+  }catch(e){box.replaceChildren(errState(e.message));}
+}
+
+async function loadFollowups(){
+  const box=document.getElementById('fu-table');
+  try{
+    const d=await getJSON('/api/followups/'+encodeURIComponent(AGENT_ID));
+    const recs=(d.followups||[]).map(f=>({
+      name:(f.leads&&f.leads.name)||'—',
+      _lead:f.leads||{}, send_at:f.send_at, channel:f.channel, sent:f.sent, message:f.message,
+    }));
+    const rows=recs.map(f=>[
+      f.name,
+      f.send_at?new Date(f.send_at).toLocaleString():'—',
+      (f.channel||'sms').toUpperCase(),
+      (f.message||'').slice(0,60)+((f.message||'').length>60?'…':''),
+      badge(f.sent?'sent':'scheduled', f.sent?'b-won':'b-pending'),
+    ]);
+    box.replaceChildren(rows.length?buildClickableTable(['Lead','When','Channel','Message','Status'],rows,recs):emptyState('No follow-ups scheduled yet.'));
   }catch(e){box.replaceChildren(errState(e.message));}
 }
 
