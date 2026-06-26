@@ -30,6 +30,9 @@
   nav button{background:transparent;border:none;color:#a8c0e0;padding:14px 16px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:.15s}
   nav button:hover{color:#fff}
   nav button.active{color:#fff;border-bottom-color:var(--gold)}
+  nav button.nav-cta{background:var(--green);color:#fff;border-radius:8px;margin:7px 6px;padding:9px 18px;border-bottom:none;box-shadow:0 1px 6px rgba(46,158,91,.45)}
+  nav button.nav-cta:hover{background:#27894e;color:#fff}
+  nav button.nav-cta.active{border-bottom:none;background:#27894e}
 
   /* Layout */
   main{max-width:1200px;margin:0 auto;padding:28px 24px 60px}
@@ -360,6 +363,7 @@
 </header>
 <nav>
   <button class="active" data-tab="overview">📊 Overview</button>
+  <button class="nav-cta" data-tab="adddata">➕ Add Data</button>
   <button data-tab="calllist">🔥 Call List</button>
   <button data-tab="leads">👥 Leads</button>
   <button data-tab="listings">🏡 Listings</button>
@@ -371,7 +375,6 @@
   <button data-tab="valuation">💰 Seller Valuations</button>
   <button data-tab="followups">📨 Follow-ups</button>
   <button data-tab="report">📄 Monthly Report</button>
-  <button data-tab="adddata">➕ Add Data</button>
 </nav>
 
 <main>
