@@ -538,13 +538,13 @@
       <input id="ad-pr-beds" type="number" placeholder="Bedrooms" class="adf">
       <input id="ad-pr-baths" type="number" step="0.5" placeholder="Bathrooms" class="adf">
       <input id="ad-pr-sqm" type="number" placeholder="Size (sqm)" class="adf">
-      <input id="ad-pr-price" type="number" placeholder="Price (sale $ or rent $/week)" class="adf">
-      <input id="ad-pr-features" placeholder="Key features (e.g. pool, garage, renovated)" class="adf">
-      <input id="ad-pr-hood" placeholder="Neighborhood (optional)" class="adf">
       <select id="ad-pr-type" class="adf">
         <option value="rental">For Rent</option>
         <option value="sale">For Sale</option>
       </select>
+      <input id="ad-pr-price" type="number" placeholder="Asking rent ($/week)" class="adf">
+      <input id="ad-pr-features" placeholder="Key features (e.g. pool, garage, renovated)" class="adf">
+      <input id="ad-pr-hood" placeholder="Neighborhood (optional)" class="adf">
       <button id="save-pr" class="savebtn">Add Data</button>
       <div id="ad-pr-res" class="adres"></div>
     </div></div>
@@ -1017,6 +1017,15 @@ document.getElementById('save-nl').addEventListener('click',()=>adPost('save-nl'
 document.getElementById('save-aa').addEventListener('click',()=>adPost('save-aa','/api/applications',
   {agent_id:AGENT_ID,applicant_name:adVal('ad-aa-name'),address:adVal('ad-aa-address'),weekly_rent:adNum('ad-aa-rent'),annual_income:adNum('ad-aa-income'),employment:adVal('ad-aa-employment'),rental_history:adVal('ad-aa-history'),references_note:adVal('ad-aa-refs')},
   'ad-aa-res','Applicant saved & screened.',null,['ad-aa-name','ad-aa-address','ad-aa-rent','ad-aa-income','ad-aa-employment','ad-aa-history','ad-aa-refs']));
+
+// Add Property: price field label follows the For Sale / For Rent choice.
+(function(){
+  const sel=document.getElementById('ad-pr-type'), price=document.getElementById('ad-pr-price');
+  if(sel&&price){
+    const sync=()=>{ price.placeholder = sel.value==='sale' ? 'Asking sale price ($)' : 'Asking rent ($/week)'; };
+    sel.addEventListener('change',sync); sync();
+  }
+})();
 
 // Add Property: AI writes the listing description, then saves it.
 document.getElementById('save-pr').addEventListener('click',async()=>{
